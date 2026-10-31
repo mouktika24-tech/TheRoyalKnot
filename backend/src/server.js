@@ -9,6 +9,7 @@ const helmet = require('helmet');
 const enquiryRoutes = require('./routes/enquiryRoutes');
 const paymentRoutes = require('./routes/paymentRoutes');
 const errorHandler = require('./middleware/errorHandler');
+const { checkDatabaseConnection } = require('./config/db');
 
 const app = express();
 const port = Number(process.env.PORT || 5000);
@@ -38,9 +39,18 @@ app.use('/api/payments', paymentRoutes);
 app.use(errorHandler);
 
 if (require.main === module) {
-  app.listen(port, () => {
-    console.log(`The Royal Knot API is listening on port ${port}`);
-  });
+  checkDatabaseConnection()
+    .then(() => {
+      app.listen(port, () => {
+        console.log(`The Royal Knot API is listening on port ${port}`);
+      });
+    })
+    .catch(() => {
+      console.error(
+        'Unable to connect to PostgreSQL. Verify DATABASE_URL and confirm the local database is running.'
+      );
+      process.exitCode = 1;
+    });
 }
 
 module.exports = app;
