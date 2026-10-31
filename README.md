@@ -327,7 +327,11 @@ npm run dev
 * `POST /api/payments/:paymentId/record-payment` — Mark client payment milestone as paid.
 
 
-* `POST /api/expenses/extra/:weddingId` — Record post-wedding additions (extra plates, overtime).
+* `POST /api/expenses/extra/:weddingId` — Record an additional wedding expense. The JSON body requires `description` (non-empty, at most 250 characters) and `unit_rate` (a positive decimal string with at most two decimal places, maximum `"99999999.99"`). Optional fields are `extra_units` (positive integer, default `1`), `vendor_id` (positive integer or `null`), and `billed_to_client` (boolean, default `true`). The server calculates `total_amount` exactly as `extra_units * unit_rate`; it is not supplied by the caller.
+
+  Example request: `{"description":"Additional chairs","extra_units":10,"unit_rate":"150.50","vendor_id":null,"billed_to_client":true}`.
+
+  Success returns HTTP `201` with `{ "success": true, "data": { "expense_id": 1, "wedding_id": 1, "vendor_id": null, "description": "Additional chairs", "extra_units": 10, "unit_rate": "150.50", "total_amount": "1505.00", "billed_to_client": true } }`. Invalid input returns HTTP `400`; a missing wedding or supplied vendor returns HTTP `404`.
 
 
 * `GET /api/weddings/:weddingId/billing-reconciliation` — Calculate net client balance and vendor payouts.

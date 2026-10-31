@@ -4,6 +4,7 @@ const cors = require('cors');
 const express = require('express');
 const helmet = require('helmet');
 const errorHandler = require('./middleware/errorHandler');
+const expenseRoutes = require('./routes/expenseRoutes');
 const healthRoutes = require('./routes/healthRoutes');
 const quoteRoutes = require('./routes/quoteRoutes');
 const scheduleRoutes = require('./routes/scheduleRoutes');
@@ -18,6 +19,7 @@ app.use(cors({ origin: clientUrl }));
 app.use(express.json());
 
 app.use('/api/health', healthRoutes);
+app.use('/api/expenses', expenseRoutes);
 app.use('/api/vendors', quoteRoutes.vendorRouter);
 app.use('/api/quotes', quoteRoutes.quoteRouter);
 app.use('/api/weddings', scheduleRoutes);
