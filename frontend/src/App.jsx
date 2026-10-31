@@ -1,9 +1,10 @@
 import React, { useState } from 'react';
 import TaskKanban from './components/planner/TaskKanban';
 import LiveScheduleTimeline from './components/schedule/LiveScheduleTimeline';
+import VendorCheckinBoard from './components/schedule/VendorCheckinBoard';
 
 export default function App() {
-  const [activeTab, setActiveTab] = useState('timeline');
+  const [activeTab, setActiveTab] = useState('checkin');
 
   return (
       <div className="min-h-screen bg-white text-slate-900 font-sans">   
@@ -41,12 +42,25 @@ export default function App() {
           >
             Scene 4: Live Schedule
           </button>
+          <button
+            type="button"
+            aria-pressed={activeTab === 'checkin'}
+            onClick={() => setActiveTab('checkin')}
+            className={`rounded-lg px-3 py-1.5 text-xs font-medium transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#D4AF37] ${
+              activeTab === 'checkin'
+                ? 'border border-[#D4AF37]/50 bg-[#722F37] text-[#FFFDF9] shadow-lg shadow-[#722F37]/30'
+                : 'bg-white text-slate-700 hover:text-slate-900'
+            }`}
+          >
+            Scene 4: Vendor Check-In
+          </button>
         </nav>
       </header>
 
       <main>
         {activeTab === 'kanban' && <TaskKanban />}
         {activeTab === 'timeline' && <LiveScheduleTimeline />}
+        {activeTab === 'checkin' && <VendorCheckinBoard />}
       </main>
     </div>
   );
