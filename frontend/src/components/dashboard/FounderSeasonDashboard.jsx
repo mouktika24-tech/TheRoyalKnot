@@ -12,6 +12,7 @@ import {
   TrendingUp,
   Users,
 } from 'lucide-react';
+import { formatCurrency } from '../../utils/currency';
 
 const SEASON_WEDDINGS = [
   {
@@ -130,15 +131,10 @@ function toCents(value) {
   return null;
 }
 
-function formatINR(cents) {
+function centsToRupees(cents) {
   const rupees = cents / 100n;
   const paise = String(cents % 100n).padStart(2, '0');
-  return `₹${new Intl.NumberFormat('en-IN').format(rupees)}.${paise}`;
-}
-
-function formatScaledAmount(cents, divisor, suffix) {
-  const hundredths = (cents + divisor / 2n) / divisor;
-  return `₹${hundredths / 100n}.${String(hundredths % 100n).padStart(2, '0')} ${suffix}`;
+  return `${rupees}.${paise}`;
 }
 
 function normalizeStatus(value) {
@@ -261,8 +257,8 @@ function FounderSeasonDashboard({
         wedding.city,
         wedding.date,
         wedding.guests,
-        formatINR(wedding.baseCents),
-        formatINR(wedding.extrasCents),
+        formatCurrency(centsToRupees(wedding.baseCents)),
+        formatCurrency(centsToRupees(wedding.extrasCents)),
         wedding.margin.toFixed(1),
         wedding.status,
       ]);
@@ -346,8 +342,8 @@ function FounderSeasonDashboard({
                 <span className="text-xs font-semibold uppercase">Total Season Gross</span>
                 <IndianRupee size={18} className="text-royalMaroon" aria-hidden="true" />
               </div>
-              <p className="text-2xl font-bold text-slate-900">{formatScaledAmount(gross, 10_000_000n, 'Cr')}</p>
-              <p className="mt-2 text-xs text-slate-500">{formatINR(gross)} across {records.length} destination weddings</p>
+              <p className="text-2xl font-bold text-slate-900">{formatCurrency(centsToRupees(gross))}</p>
+              <p className="mt-2 text-xs text-slate-500">Across {records.length} destination weddings</p>
             </motion.article>
 
             <motion.article
@@ -374,11 +370,11 @@ function FounderSeasonDashboard({
                 <span className="text-xs font-semibold uppercase">Contracted &amp; Incidentals</span>
                 <ArrowUpRight size={18} className="text-royalMaroon" aria-hidden="true" />
               </div>
-              <p className="text-2xl font-bold text-slate-900">{formatScaledAmount(totals.base, 10_000_000n, 'Cr')}</p>
+              <p className="text-2xl font-bold text-slate-900">{formatCurrency(centsToRupees(totals.base))}</p>
               <p className="mt-2 text-xs text-slate-500">
-                Base contracted <span className="font-semibold text-slateNavy">{formatINR(totals.base)}</span>
-                <span aria-hidden="true"> · </span>
-                Incidentals billed <span className="font-semibold text-slateNavy">{formatScaledAmount(totals.extras, 100_000n, 'L')}</span>
+                Base contracted <span className="font-semibold text-slateNavy">{formatCurrency(centsToRupees(totals.base))}</span>
+                {' · '}
+                Incidentals billed <span className="font-semibold text-slateNavy">{formatCurrency(centsToRupees(totals.extras))}</span>
               </p>
             </motion.article>
 
@@ -492,9 +488,9 @@ function FounderSeasonDashboard({
                             {wedding.guests.toLocaleString('en-IN')}
                           </span>
                         </td>
-                        <td className="whitespace-nowrap px-5 py-4 text-right font-medium text-slateNavy">{formatINR(wedding.baseCents)}</td>
+                        <td className="whitespace-nowrap px-5 py-4 text-right font-medium text-slateNavy">{formatCurrency(centsToRupees(wedding.baseCents))}</td>
                         <td className="whitespace-nowrap px-5 py-4 text-right text-slateNavy/80">
-                          {wedding.extrasCents === 0n ? '—' : formatINR(wedding.extrasCents)}
+                          {wedding.extrasCents === 0n ? '—' : formatCurrency(centsToRupees(wedding.extrasCents))}
                         </td>
                         <td className="px-5 py-4 text-center">
                           <span className={`inline-flex whitespace-nowrap rounded-full border px-2.5 py-1 text-[10px] font-bold uppercase tracking-wide ${

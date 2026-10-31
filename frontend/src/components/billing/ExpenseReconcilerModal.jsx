@@ -8,6 +8,7 @@ import {
   Receipt,
   Trash2,
 } from 'lucide-react';
+import { formatCurrency } from '../../utils/currency';
 
 const ORIGINAL_QUOTE = '4200000.00';
 
@@ -92,10 +93,8 @@ function centsToDecimal(cents) {
   return `${whole}.${fraction}`;
 }
 
-function formatINR(cents) {
-  const whole = cents / 100n;
-  const fraction = String(cents % 100n).padStart(2, '0');
-  return `₹${new Intl.NumberFormat('en-IN', { maximumFractionDigits: 0 }).format(whole)}.${fraction}`;
+function formatCentsAsCurrency(cents) {
+  return formatCurrency(centsToDecimal(cents));
 }
 
 function normalizeExpense(expense, index) {
@@ -358,17 +357,17 @@ function ExpenseReconcilerModal({
       <section aria-label="Reconciliation summary" className="my-6 grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
         <article className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
           <p className="text-xs font-medium text-slate-500">Original contract quote</p>
-          <p className="mt-2 text-xl font-bold text-slate-900">{formatINR(decimalToCents(ORIGINAL_QUOTE))}</p>
+          <p className="mt-2 text-xl font-bold text-slate-900">{formatCurrency(ORIGINAL_QUOTE)}</p>
           <p className="mt-1 text-[11px] text-slate-400">Baseline approved at booking</p>
         </article>
         <article className="rounded-xl border border-amber-200 bg-amber-50/50 p-4 shadow-sm">
           <p className="text-xs font-medium text-amber-800">Extra expenses incurred</p>
-          <p className="mt-2 text-xl font-bold text-amber-700">{formatINR(totals.incurred)}</p>
+          <p className="mt-2 text-xl font-bold text-amber-700">{formatCentsAsCurrency(totals.incurred)}</p>
           <p className="mt-1 text-[11px] text-slate-500">{expenses.length} ledger {expenses.length === 1 ? 'entry' : 'entries'}</p>
         </article>
         <article className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
           <p className="text-xs font-medium text-slate-500">Agency-absorbed expenses</p>
-          <p className="mt-2 text-xl font-bold text-slate-700">{formatINR(totals.agencyAbsorbed)}</p>
+          <p className="mt-2 text-xl font-bold text-slate-700">{formatCentsAsCurrency(totals.agencyAbsorbed)}</p>
           <p className="mt-1 text-[11px] text-slate-400">Not included in client invoice</p>
         </article>
         <article className="rounded-xl border border-emerald-300 bg-emerald-50/50 p-4 shadow-sm">
@@ -376,7 +375,7 @@ function ExpenseReconcilerModal({
             <p className="text-xs font-semibold text-emerald-800">Final reconciled total</p>
             {isAudited ? <CheckCircle2 size={17} className="text-emerald-600" aria-hidden="true" /> : <AlertCircle size={17} className="text-amber-600" aria-hidden="true" />}
           </div>
-          <p className="mt-2 text-xl font-bold text-emerald-700">{formatINR(totals.finalTotal)}</p>
+          <p className="mt-2 text-xl font-bold text-emerald-700">{formatCentsAsCurrency(totals.finalTotal)}</p>
           <span className={`mt-2 inline-flex rounded-full border px-2.5 py-1 text-[10px] font-semibold tracking-wide ${
             isAudited
               ? 'border-emerald-300 bg-emerald-50 text-emerald-800'
@@ -462,7 +461,7 @@ function ExpenseReconcilerModal({
             <div className="flex items-center justify-between rounded-lg border border-slate-200 bg-slate-50 p-3 text-xs">
               <span className="text-slate-600">Calculated total</span>
               <output className="font-mono text-sm font-bold text-slate-900" aria-live="polite">
-                {formatINR(computedTotalCents)}
+                {formatCentsAsCurrency(computedTotalCents)}
               </output>
             </div>
 
@@ -541,8 +540,8 @@ function ExpenseReconcilerModal({
                         </td>
                         <td className="max-w-64 px-3 py-3 text-slate-600">{expense.description}</td>
                         <td className="px-3 py-3 text-right font-mono">{expense.extra_units}</td>
-                        <td className="whitespace-nowrap px-3 py-3 text-right font-mono">₹{expense.unit_rate}</td>
-                        <td className="whitespace-nowrap px-3 py-3 text-right font-mono font-bold text-slate-900">₹{expense.total_amount}</td>
+                        <td className="whitespace-nowrap px-3 py-3 text-right font-mono">{formatCurrency(expense.unit_rate)}</td>
+                        <td className="whitespace-nowrap px-3 py-3 text-right font-mono font-bold text-slate-900">{formatCurrency(expense.total_amount)}</td>
                         <td className="px-3 py-3 text-center">
                           <span className={`inline-flex rounded-full border px-2 py-0.5 text-[10px] font-semibold ${
                             expense.billed_to_client
@@ -573,9 +572,9 @@ function ExpenseReconcilerModal({
 
           <footer className="mt-5 flex flex-col gap-3 border-t border-slate-200 pt-4 sm:flex-row sm:items-center sm:justify-between">
             <p className="text-xs text-slate-500">
-              Client invoice: <strong className="font-semibold text-slate-800">{formatINR(totals.clientInvoice)}</strong>
+              Client invoice: <strong className="font-semibold text-slate-800">{formatCentsAsCurrency(totals.clientInvoice)}</strong>
               <span className="mx-1.5 text-slate-300">·</span>
-              Agency absorbed: <strong className="font-semibold text-slate-800">{formatINR(totals.agencyAbsorbed)}</strong>
+              Agency absorbed: <strong className="font-semibold text-slate-800">{formatCentsAsCurrency(totals.agencyAbsorbed)}</strong>
             </p>
             <button
               type="button"
