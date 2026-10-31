@@ -3,9 +3,10 @@ import TaskKanban from './components/planner/TaskKanban';
 import LiveScheduleTimeline from './components/schedule/LiveScheduleTimeline';
 import VendorCheckinBoard from './components/schedule/VendorCheckinBoard';
 import ExpenseReconcilerModal from './components/billing/ExpenseReconcilerModal';
+import FounderSeasonDashboard from './components/dashboard/FounderSeasonDashboard';
 
 export default function App() {
-  const [activeTab, setActiveTab] = useState('reconcile');
+  const [activeTab, setActiveTab] = useState('dashboard');
 
   return (
       <div className="min-h-screen bg-white text-slate-900 font-sans">   
@@ -67,6 +68,18 @@ export default function App() {
           >
             Scene 5: Reconciliation
           </button>
+          <button
+            type="button"
+            aria-pressed={activeTab === 'dashboard'}
+            onClick={() => setActiveTab('dashboard')}
+            className={`rounded-lg px-3 py-1.5 text-xs font-medium transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#D4AF37] ${
+              activeTab === 'dashboard'
+                ? 'border border-[#D4AF37]/50 bg-[#722F37] text-[#FFFDF9] shadow-lg shadow-[#722F37]/30'
+                : 'bg-white text-slate-700 hover:text-slate-900'
+            }`}
+          >
+            Scene 6: Founder Dashboard
+          </button>
         </nav>
       </header>
 
@@ -75,6 +88,7 @@ export default function App() {
         {activeTab === 'timeline' && <LiveScheduleTimeline />}
         {activeTab === 'checkin' && <VendorCheckinBoard />}
         {activeTab === 'reconcile' && <ExpenseReconcilerModal />}
+        {activeTab === 'dashboard' && <FounderSeasonDashboard />}
       </main>
     </div>
   );
