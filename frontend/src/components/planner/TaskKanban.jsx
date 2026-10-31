@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
+import { opsApi } from '../../services/opsApi';
 import {
   ArrowRight,
   CheckCircle2,
@@ -129,6 +130,7 @@ function TaskKanban({
   const [searchQuery, setSearchQuery] = useState('');
   const [pendingTaskIds, setPendingTaskIds] = useState(() => new Set());
   const [isGenerating, setIsGenerating] = useState(false);
+  const [isLoadingTasks, setIsLoadingTasks] = useState(!Array.isArray(suppliedTasks));
   const [actionError, setActionError] = useState('');
   const externalErrorMessage = typeof externalError === 'string'
     ? externalError
@@ -140,6 +142,39 @@ function TaskKanban({
 
   useEffect(() => {
     if (Array.isArray(suppliedTasks)) setTaskList(normalizeTasks(suppliedTasks));
+  }, [suppliedTasks]);
+
+  useEffect(() => {
+    if (Array.isArray(suppliedTasks)) {
+      setIsLoadingTasks(false);
+      return undefined;
+    }
+
+    let isMounted = true;
+    setIsLoadingTasks(true);
+    opsApi.getTasks(1, INITIAL_TASKS)
+      .then((data) => {
+        if (isMounted && Array.isArray(data) && data.length > 0) {
+          const normalizedTasks = normalizeTasks(data);
+          if (normalizedTasks.length > 0) {
+            setTaskList(normalizedTasks);
+          } else {
+            setActionError('The tasks service returned no valid task records. The seeded plan remains available.');
+          }
+        }
+      })
+      .catch((loadError) => {
+        if (isMounted) {
+          setActionError(getErrorMessage(loadError, 'Could not load wedding tasks.'));
+        }
+      })
+      .finally(() => {
+        if (isMounted) setIsLoadingTasks(false);
+      });
+
+    return () => {
+      isMounted = false;
+    };
   }, [suppliedTasks]);
 
   const completedCount = taskList.filter((task) => task.stage === 'DONE').length;
@@ -172,7 +207,11 @@ function TaskKanban({
     )));
 
     try {
-      await onTaskStageChange?.(task.task_id, nextStage.key);
+      if (onTaskStageChange) {
+        await onTaskStageChange(task.task_id, nextStage.key);
+      } else {
+        await opsApi.updateTaskStage(task.task_id, nextStage.key);
+      }
     } catch (stageError) {
       setTaskList((current) => current.map((item) => (
         item.task_id === task.task_id ? { ...item, stage: task.stage } : item
@@ -216,7 +255,7 @@ function TaskKanban({
         <button
           type="button"
           onClick={generatePlan}
-          disabled={loading || isGenerating}
+          disabled={loading || isLoadingTasks || isGenerating}
           className="inline-flex min-h-11 shrink-0 items-center justify-center gap-2 rounded-xl border border-[#D4AF37]/40 bg-gradient-to-r from-[#722F37] to-[#8B3A44] px-4 py-2.5 text-sm font-semibold text-[#FFFDF9] shadow-md shadow-[#722F37]/30 transition hover:from-[#8B3A44] hover:to-[#A0424E] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#D4AF37] disabled:cursor-not-allowed disabled:opacity-60"
         >
           <Sparkles size={17} className="text-[#F3E5AB]" aria-hidden="true" />
@@ -300,7 +339,7 @@ function TaskKanban({
         </label>
       </div>
 
-      {loading && <p role="status" className="text-sm text-slate-400">Loading wedding tasks…</p>}
+      {(loading || isLoadingTasks) && <p role="status" className="text-sm text-slate-400">Loading wedding tasks…</p>}
 
       <div className="grid items-start gap-4 md:grid-cols-3">
         {STAGES.map(({ key, title, icon: Icon, dot, badge, count }) => {
@@ -369,7 +408,7 @@ function TaskKanban({
                             <button
                               type="button"
                               onClick={() => advanceTaskStage(task)}
-                              disabled={isPending || loading}
+                              disabled={isPending || loading || isLoadingTasks}
                               aria-label={`Move ${task.title} to ${nextStage.title}`}
                               className="inline-flex min-h-9 shrink-0 items-center gap-1 rounded-lg px-2 text-xs font-semibold text-[#722F37] transition hover:bg-[#722F37]/5 focus-visible:outline focus-visible:outline-2 focus-visible:outline-[#D4AF37] disabled:cursor-wait disabled:opacity-50"
                             >
