@@ -240,7 +240,14 @@ Start the backend server:
 ```bash
 npm run dev
 # Server runs on http://localhost:5000
+# Or use: npm start
 
+```
+
+Run the backend automated tests:
+
+```bash
+npm test
 ```
 
 ### 3. Frontend Configuration
@@ -312,6 +319,16 @@ npm run dev
 
 
 * `POST /api/payments/:paymentId/record-payment` — Mark client payment milestone as paid.
+
+#### Payment API details
+
+`POST /api/payments/create-plan/:weddingId` takes no request body. It creates a booking deposit (20%, due today), an advance (50%, due 30 days before the wedding start date), and a final balance (30%, due 3 days after the wedding end date) in one transaction. Success returns `201` with `{ "success": true, "data": { "payments": [...] } }`. Invalid IDs return `400`; missing weddings return `404`; an existing or partial payment plan returns `409`.
+
+The repository does not define an agreed client-price source. `weddings.max_budget` is a maximum, and `weddings.actual_cost` is used for vendor costs; neither is used as the payment-plan basis. Until an approved client amount is established and persisted, plan creation returns `409` with an actionable error and creates no payment records. The seed script does not create payment rows because it has no approved price source.
+
+`POST /api/payments/:paymentId/record-payment` accepts an optional JSON body such as `{ "payment_method": "Bank transfer" }`. The method, if supplied, must be a non-empty string of at most 50 characters. Success marks the record `PAID`, sets `paid_date` to the database's current date, and returns `{ "success": true, "data": { "payment": {...} } }`. Invalid IDs or methods return `400`, missing payments return `404`, and attempts to record an already-paid payment return `409`. This endpoint records payment status only; it does not process a payment.
+
+The payment API tests use a stubbed PostgreSQL pool and do not require a live database.
 
 
 * `POST /api/expenses/extra/:weddingId` — Record post-wedding additions (extra plates, overtime).

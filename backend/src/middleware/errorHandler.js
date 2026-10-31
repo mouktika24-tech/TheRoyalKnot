@@ -13,14 +13,17 @@ function errorHandler(error, req, res, next) {
     console.error('Unhandled application error:', error);
   }
 
-  const errorMessage =
-    statusCode < 500 && typeof error.message === 'string' && error.message.length > 0
+  const isInvalidJson = error.type === 'entity.parse.failed';
+  const errorMessage = isInvalidJson
+    ? 'Validation failed'
+    : statusCode < 500 && typeof error.message === 'string' && error.message.length > 0
       ? error.message
-    : statusCode >= 500
+      : statusCode >= 500
         ? 'Internal server error'
         : 'Request failed';
-  const details =
-    statusCode < 500 && Array.isArray(error.details)
+  const details = isInvalidJson
+    ? ['Request body must be valid JSON']
+    : statusCode < 500 && Array.isArray(error.details)
       ? error.details.filter((detail) => typeof detail === 'string')
       : [];
 

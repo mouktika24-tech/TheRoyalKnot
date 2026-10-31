@@ -2,7 +2,7 @@ const path = require('node:path');
 const dotenv = require('dotenv');
 const { Pool } = require('pg');
 
-dotenv.config({ path: path.resolve(__dirname, '..', '..', '..', '.env') });
+dotenv.config({ path: path.resolve(__dirname, '..', '..', '.env') });
 
 if (!process.env.DATABASE_URL) {
   throw new Error(

@@ -208,47 +208,6 @@ WHERE clients.email LIKE 'seed.client%@royalknot.local'
         AND existing.scheduled_arrival_time = '08:00'
   );
 
-INSERT INTO payments (wedding_id, stage_type, amount, due_date, paid_date, status, payment_method)
-SELECT weddings.wedding_id,
-       milestones.stage_type,
-       round(weddings.max_budget * milestones.budget_share, 2),
-       milestones.due_date,
-       CASE
-           WHEN milestones.stage_type = 'BOOKING_DEPOSIT'
-                AND weddings.status IN ('CONFIRMED', 'IN_PLANNING', 'LIVE', 'COMPLETED')
-               THEN milestones.due_date
-           WHEN weddings.status = 'COMPLETED' THEN milestones.due_date
-           ELSE NULL
-       END,
-       CASE
-           WHEN milestones.stage_type = 'BOOKING_DEPOSIT'
-                AND weddings.status IN ('CONFIRMED', 'IN_PLANNING', 'LIVE', 'COMPLETED')
-               THEN 'PAID'
-           WHEN weddings.status = 'COMPLETED' THEN 'PAID'
-           WHEN milestones.due_date < DATE '2026-10-31' THEN 'OVERDUE'
-           ELSE 'DUE'
-       END,
-       CASE
-           WHEN milestones.stage_type = 'BOOKING_DEPOSIT'
-                AND weddings.status IN ('CONFIRMED', 'IN_PLANNING', 'LIVE', 'COMPLETED')
-               THEN 'BANK_TRANSFER'
-           WHEN weddings.status = 'COMPLETED' THEN 'BANK_TRANSFER'
-           ELSE NULL
-       END
-FROM weddings
-JOIN clients ON clients.client_id = weddings.client_id
-CROSS JOIN LATERAL (VALUES
-    ('BOOKING_DEPOSIT', 0.20::NUMERIC, weddings.start_date - 90),
-    ('ADVANCE_1MONTH', 0.50::NUMERIC, weddings.start_date - 30),
-    ('FINAL_BALANCE', 0.30::NUMERIC, weddings.start_date + 3)
-) AS milestones(stage_type, budget_share, due_date)
-WHERE clients.email LIKE 'seed.client%@royalknot.local'
-  AND NOT EXISTS (
-      SELECT 1 FROM payments existing
-      WHERE existing.wedding_id = weddings.wedding_id
-        AND existing.stage_type = milestones.stage_type
-  );
-
 INSERT INTO extra_expenses (
     wedding_id, vendor_id, description, extra_units, unit_rate, total_amount, billed_to_client
 )
