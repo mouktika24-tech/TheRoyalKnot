@@ -266,10 +266,12 @@ npm run dev
 * `PUT /api/enquiries/:weddingId/consultation` — Schedule client consultation date and notes.
 
 
-* `POST /api/agreements/generate/:weddingId` — Auto-generate service agreement terms based on package scope.
+* `POST /api/agreements/generate/:weddingId` — Create one agreement for an existing wedding, or return the existing agreement if exactly one exists. If multiple agreements exist, returns `409 Conflict`. Newly created agreements have status `PENDING` and contain only the approved factual statement that the document records currently available system information and creates no additional contractual obligations, payment commitments, or legal terms. Returns `201 Created` for a new agreement and `200 OK` for an existing one.
 
 
-* `POST /api/agreements/:agreementId/sign` — Bind digital signature canvas data and confirm booking.
+* `GET /api/agreements/:weddingId` — Return the agreement and documented wedding details for the wedding. Returns `404 Not Found` if the wedding or its agreement does not exist and `409 Conflict` if multiple agreements exist. `max_budget` is labeled `Recorded Maximum Budget`; it is not an agreed package price. Nullable wedding values are preserved as `null`.
+
+* `POST /api/agreements/:agreementId/sign` — Sign a pending agreement using JSON fields `signer_name` (non-empty, at most 150 characters) and `signature_data` (`data:image/png;base64,...` or `data:image/jpeg;base64,...`). The decoded image may not exceed 1 MiB and must decode as a single PNG or JPEG within the configured dimensions. Returns `200 OK` with the signed agreement. Invalid input returns `400`; a missing agreement returns `404`; an already signed, rejected, or wedding-unlinked agreement returns `409`. Signing the agreement and confirming its wedding are performed in one transaction.
 
 
 
