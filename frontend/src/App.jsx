@@ -3,12 +3,9 @@ import AnimatedCard from './components/common/AnimatedCard.jsx'
 import { ToastProvider } from './context/ToastProvider.jsx'
 import MainLayout from './layouts/MainLayout.jsx'
 import Enquiries from './pages/Enquiries.jsx'
+import Agreements from './pages/Agreements.jsx'
 
 const modules = [
-  {
-    path: 'agreements',
-    title: 'Digital Agreements',
-  },
   {
     path: 'quotes',
     title: 'Vendor Quote Matrix',
@@ -57,6 +54,7 @@ function App() {
           <Route element={<MainLayout />}>
             <Route index element={<Navigate to="/enquiries" replace />} />
             <Route path="enquiries" element={<Enquiries />} />
+            <Route path="agreements" element={<Agreements />} />
             {modules.map(({ path, title }) => (
               <Route
                 key={path}
