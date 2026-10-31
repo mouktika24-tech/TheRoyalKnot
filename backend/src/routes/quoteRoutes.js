@@ -1,7 +1,7 @@
 const express = require('express');
 const { body, param, query, validationResult } = require('express-validator');
 const quoteController = require('../controllers/quoteController');
-const { VENDOR_CATEGORIES } = require('../services/quoteService');
+const { isValidQuoteAmount, VENDOR_CATEGORIES } = require('../services/quoteService');
 
 function sendValidationErrors(req, res, next) {
   const result = validationResult(req);
@@ -32,14 +32,14 @@ quoteRouter.post(
   body('vendor_id').isInt({ min: 1 }).withMessage('vendor_id must be a positive integer'),
   body('category').isIn(VENDOR_CATEGORIES).withMessage('Unsupported vendor category'),
   body('price_per_plate')
-    .isFloat({ min: 0, max: 99999999.99, decimal_digits: '0,2' })
-    .withMessage('price_per_plate must be a non-negative amount with at most two decimal places'),
+    .custom((value) => isValidQuoteAmount(value, 'price_per_plate'))
+    .withMessage('price_per_plate must be a positive decimal string with at most two decimal places and within its database limit'),
   body('extra_hour_rate')
-    .isFloat({ min: 0, max: 99999999.99, decimal_digits: '0,2' })
-    .withMessage('extra_hour_rate must be a non-negative amount with at most two decimal places'),
+    .custom((value) => isValidQuoteAmount(value, 'extra_hour_rate'))
+    .withMessage('extra_hour_rate must be a positive decimal string with at most two decimal places and within its database limit'),
   body('total_amount')
-    .isFloat({ min: 0.01, max: 9999999999.99, decimal_digits: '0,2' })
-    .withMessage('total_amount must be a positive amount with at most two decimal places'),
+    .custom((value) => isValidQuoteAmount(value, 'total_amount'))
+    .withMessage('total_amount must be a positive decimal string with at most two decimal places and within its database limit'),
   body('proposal_notes')
     .optional({ nullable: true })
     .isString()

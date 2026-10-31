@@ -131,6 +131,36 @@ function createAcceptanceDatabase({ failOnActualCost = false } = {}) {
   return database;
 }
 
+function createQuoteCreationDatabase({ wedding, vendor }) {
+  const queries = [];
+  return {
+    queries,
+    async query(sql, values) {
+      queries.push({ sql, values });
+      if (sql.startsWith('SELECT wedding_id FROM weddings')) {
+        return { rows: wedding ? [{ wedding_id: 1 }] : [], rowCount: wedding ? 1 : 0 };
+      }
+      if (sql.startsWith('SELECT vendor_id, category, is_active FROM vendors')) {
+        return { rows: vendor ? [vendor] : [], rowCount: vendor ? 1 : 0 };
+      }
+      return {
+        rows: [{ quote_id: 10, wedding_id: 1, vendor_id: 2, category: 'CATERER', status: 'SUBMITTED' }],
+        rowCount: 1
+      };
+    }
+  };
+}
+
+const validQuoteInput = {
+  wedding_id: 1,
+  vendor_id: 2,
+  category: 'CATERER',
+  price_per_plate: '2200.00',
+  extra_hour_rate: '15000.00',
+  total_amount: '880000.00',
+  proposal_notes: 'Seasonal menu'
+};
+
 test('vendor retrieval applies category filtering with a parameterized query', async () => {
   let queryText;
   let queryValues;
@@ -150,45 +180,174 @@ test('vendor retrieval applies category filtering with a parameterized query', a
 });
 
 test('quote creation verifies wedding and vendor, then inserts a submitted quote', async () => {
-  const queries = [];
-  const database = {
-    async query(sql, values) {
-      queries.push({ sql, values });
-      if (sql.startsWith('SELECT wedding_id FROM weddings')) {
-        return { rows: [{ wedding_id: 1 }], rowCount: 1 };
-      }
-      if (sql.startsWith('SELECT vendor_id, category, is_active FROM vendors')) {
-        return { rows: [{ vendor_id: 2, category: 'CATERER', is_active: true }], rowCount: 1 };
-      }
-      return {
-        rows: [{ quote_id: 10, wedding_id: 1, vendor_id: 2, category: 'CATERER', status: 'SUBMITTED' }],
-        rowCount: 1
+  const database = createQuoteCreationDatabase({
+    wedding: true,
+    vendor: { vendor_id: 2, category: 'CATERER', is_active: true }
+  });
+
+  const quote = await quoteService.createQuote(validQuoteInput, database);
+
+  assert.equal(quote.status, 'SUBMITTED');
+  assert.match(database.queries[2].sql, /'SUBMITTED'/);
+  assert.deepEqual(database.queries[2].values, [
+    validQuoteInput.wedding_id,
+    validQuoteInput.vendor_id,
+    validQuoteInput.category,
+    validQuoteInput.price_per_plate,
+    validQuoteInput.extra_hour_rate,
+    validQuoteInput.total_amount,
+    validQuoteInput.proposal_notes
+  ]);
+});
+
+test('quote creation rejects invalid precision and non-positive amounts before database access', async (t) => {
+  for (const [field, value] of [
+    ['price_per_plate', '10.001'],
+    ['extra_hour_rate', '10.999'],
+    ['total_amount', '0.001'],
+    ['price_per_plate', '0'],
+    ['extra_hour_rate', '-1'],
+    ['total_amount', '0'],
+    ['price_per_plate', 10],
+    ['extra_hour_rate', 10.5],
+    ['total_amount', Number.NaN],
+    ['total_amount', Number.POSITIVE_INFINITY],
+    ['total_amount', ''],
+    ['total_amount', 'not-a-number']
+  ]) {
+    await t.test(`${field} rejects ${value}`, async () => {
+      let queried = false;
+      const database = {
+        async query() {
+          queried = true;
+          return { rows: [{ wedding_id: 1 }], rowCount: 1 };
+        }
       };
-    }
-  };
+
+      await assert.rejects(
+        quoteService.createQuote({ ...validQuoteInput, [field]: value }, database),
+        (error) => error.statusCode === 400 && error.message.includes(field)
+      );
+      assert.equal(queried, false);
+    });
+  }
+});
+
+test('quote creation accepts exact decimal strings without floating-point rounding', async () => {
+  const database = createQuoteCreationDatabase({
+    wedding: true,
+    vendor: { vendor_id: 2, category: 'CATERER', is_active: true }
+  });
   const input = {
-    wedding_id: 1,
-    vendor_id: 2,
-    category: 'CATERER',
-    price_per_plate: 2200,
-    extra_hour_rate: 15000,
-    total_amount: 880000,
-    proposal_notes: 'Seasonal menu'
+    ...validQuoteInput,
+    price_per_plate: '10.50',
+    extra_hour_rate: '10.99',
+    total_amount: '10.50'
   };
 
   const quote = await quoteService.createQuote(input, database);
 
   assert.equal(quote.status, 'SUBMITTED');
-  assert.match(queries[2].sql, /'SUBMITTED'/);
-  assert.deepEqual(queries[2].values, [
-    input.wedding_id,
-    input.vendor_id,
-    input.category,
-    input.price_per_plate,
-    input.extra_hour_rate,
-    input.total_amount,
-    input.proposal_notes
-  ]);
+  assert.deepEqual(database.queries[2].values.slice(3, 6), ['10.50', '10.99', '10.50']);
+});
+
+test('quote creation accepts PostgreSQL numeric maxima unchanged and rejects values above them', async (t) => {
+  const maxInputs = [
+    ['price_per_plate', '99999999.99'],
+    ['extra_hour_rate', '99999999.99'],
+    ['total_amount', '9999999999.99']
+  ];
+
+  for (const [field, value] of maxInputs) {
+    await t.test(`${field} accepts ${value}`, async () => {
+      const database = createQuoteCreationDatabase({
+        wedding: true,
+        vendor: { vendor_id: 2, category: 'CATERER', is_active: true }
+      });
+
+      await quoteService.createQuote({ ...validQuoteInput, [field]: value }, database);
+
+      assert.equal(database.queries[2].values[['price_per_plate', 'extra_hour_rate', 'total_amount'].indexOf(field) + 3], value);
+    });
+  }
+
+  for (const [field, value] of [
+    ['price_per_plate', '100000000.00'],
+    ['extra_hour_rate', '100000000.00'],
+    ['total_amount', '10000000000.00']
+  ]) {
+    await t.test(`${field} rejects ${value}`, async () => {
+      let queried = false;
+      const database = {
+        async query() {
+          queried = true;
+          return { rows: [], rowCount: 0 };
+        }
+      };
+
+      await assert.rejects(
+        quoteService.createQuote({ ...validQuoteInput, [field]: value }, database),
+        (error) => error.statusCode === 400 && error.message.includes(field)
+      );
+      assert.equal(queried, false);
+    });
+  }
+});
+
+test('quote creation rejects a non-existent wedding without looking up a vendor or inserting', async () => {
+  const database = createQuoteCreationDatabase({ wedding: false, vendor: null });
+
+  await assert.rejects(
+    quoteService.createQuote(validQuoteInput, database),
+    (error) => error.statusCode === 404 && error.message === 'Wedding not found'
+  );
+  assert.equal(database.queries.length, 1);
+});
+
+test('quote creation rejects a non-existent vendor without inserting', async () => {
+  const database = createQuoteCreationDatabase({ wedding: true, vendor: null });
+
+  await assert.rejects(
+    quoteService.createQuote(validQuoteInput, database),
+    (error) => error.statusCode === 404 && error.message === 'Active vendor not found'
+  );
+  assert.equal(database.queries.length, 2);
+});
+
+test('quote creation rejects an inactive vendor without inserting', async () => {
+  const database = createQuoteCreationDatabase({
+    wedding: true,
+    vendor: { vendor_id: 2, category: 'CATERER', is_active: false }
+  });
+
+  await assert.rejects(
+    quoteService.createQuote(validQuoteInput, database),
+    (error) => error.statusCode === 404 && error.message === 'Active vendor not found'
+  );
+  assert.equal(database.queries.length, 2);
+});
+
+test('quote creation rejects a vendor category mismatch without inserting', async () => {
+  const database = createQuoteCreationDatabase({
+    wedding: true,
+    vendor: { vendor_id: 2, category: 'DECORATOR', is_active: true }
+  });
+
+  await assert.rejects(
+    quoteService.createQuote(validQuoteInput, database),
+    (error) => error.statusCode === 400 && error.message === 'Quote category must match the vendor category'
+  );
+  assert.equal(database.queries.length, 2);
+});
+
+test('quote creation rejects an unsupported category before querying the database', async () => {
+  const database = createQuoteCreationDatabase({ wedding: true, vendor: null });
+
+  await assert.rejects(
+    quoteService.createQuote({ ...validQuoteInput, category: 'CAKE' }, database),
+    (error) => error.statusCode === 400 && error.message === 'Unsupported vendor category'
+  );
+  assert.equal(database.queries.length, 0);
 });
 
 test('quote comparison returns vendor details and calculates estimated food cost in SQL', async () => {

@@ -13,6 +13,35 @@ const VENDOR_CATEGORIES = [
   'MEHENDI_ARTIST'
 ];
 
+const QUOTE_AMOUNT_LIMITS_IN_CENTS = {
+  price_per_plate: { maxCents: 9999999999n, maxWholeDigits: 8 },
+  extra_hour_rate: { maxCents: 9999999999n, maxWholeDigits: 8 },
+  total_amount: { maxCents: 999999999999n, maxWholeDigits: 10 }
+};
+
+function isValidQuoteAmount(value, field) {
+  const limits = QUOTE_AMOUNT_LIMITS_IN_CENTS[field];
+  if (limits === undefined || typeof value !== 'string') {
+    return false;
+  }
+
+  const match = /^(\d+)(?:\.(\d{1,2}))?$/.exec(value);
+  if (!match) {
+    return false;
+  }
+
+  const significantWholePart = match[1].replace(/^0+(?=\d)/, '');
+  if (significantWholePart.length > limits.maxWholeDigits) {
+    return false;
+  }
+
+  const wholeCents = BigInt(significantWholePart) * 100n;
+  const fractionalCents = BigInt((match[2] || '').padEnd(2, '0') || '0');
+  const amountInCents = wholeCents + fractionalCents;
+
+  return amountInCents > 0n && amountInCents <= limits.maxCents;
+}
+
 function createHttpError(statusCode, message) {
   const error = new Error(message);
   error.statusCode = statusCode;
@@ -48,6 +77,14 @@ async function getVendors(category, database = pool) {
 
 async function createQuote(input, database = pool) {
   assertCategory(input.category);
+  for (const field of Object.keys(QUOTE_AMOUNT_LIMITS_IN_CENTS)) {
+    if (!isValidQuoteAmount(input[field], field)) {
+      throw createHttpError(
+        400,
+        `${field} must be a positive decimal string with at most two decimal places and within its database limit`
+      );
+    }
+  }
 
   const wedding = await database.query(
     'SELECT wedding_id FROM weddings WHERE wedding_id = $1',
@@ -239,5 +276,6 @@ module.exports = {
   compareQuotes,
   createQuote,
   getVendors,
+  isValidQuoteAmount,
   listWeddingQuotes
 };

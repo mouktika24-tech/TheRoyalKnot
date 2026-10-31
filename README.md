@@ -279,6 +279,7 @@ npm run dev
 
 
 * `POST /api/quotes` — Submit detailed vendor proposal with plate and overtime pricing.
+  Monetary fields (`price_per_plate`, `extra_hour_rate`, and `total_amount`) must be JSON strings containing positive decimal values with at most two decimal places. The maximums are `99999999.99` for the first two fields and `9999999999.99` for `total_amount`; for example, use `"2200.00"` rather than `2200`.
 
 
 * `GET /api/quotes/compare/:weddingId` — Fetch side-by-side comparison matrix for quotes.
