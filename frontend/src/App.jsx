@@ -7,6 +7,7 @@ import Enquiries from './pages/Enquiries.jsx'
 import Agreements from './pages/Agreements.jsx'
 
 const VendorQuotes = lazy(() => import('./pages/VendorQuotes.jsx'))
+const Payments = lazy(() => import('./pages/Payments.jsx'))
 
 const modules = [
   {
@@ -16,10 +17,6 @@ const modules = [
   {
     path: 'schedule',
     title: 'Big Day Live Schedule',
-  },
-  {
-    path: 'billing',
-    title: 'Billing & Reconciliation',
   },
   {
     path: 'dashboard',
@@ -45,13 +42,13 @@ function ModulePlaceholder({ title }) {
   )
 }
 
-function ModuleLoading() {
+function ModuleLoading({ label }) {
   return (
     <div
       className="mx-auto max-w-4xl rounded-xl border border-champagneGold/30 bg-white px-5 py-8 text-sm text-slateNavy/70 shadow-sm"
       role="status"
     >
-      Loading vendor quotations…
+      Loading {label}…
     </div>
   )
 }
@@ -68,8 +65,16 @@ function App() {
             <Route
               path="quotes"
               element={
-                <Suspense fallback={<ModuleLoading />}>
+                <Suspense fallback={<ModuleLoading label="vendor quotations" />}>
                   <VendorQuotes />
+                </Suspense>
+              }
+            />
+            <Route
+              path="billing"
+              element={
+                <Suspense fallback={<ModuleLoading label="client payments" />}>
+                  <Payments />
                 </Suspense>
               }
             />
