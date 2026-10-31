@@ -334,7 +334,11 @@ npm run dev
   Success returns HTTP `201` with `{ "success": true, "data": { "expense_id": 1, "wedding_id": 1, "vendor_id": null, "description": "Additional chairs", "extra_units": 10, "unit_rate": "150.50", "total_amount": "1505.00", "billed_to_client": true } }`. Invalid input returns HTTP `400`; a missing wedding or supplied vendor returns HTTP `404`.
 
 
-* `GET /api/weddings/:weddingId/billing-reconciliation` — Calculate net client balance and vendor payouts.
+* `GET /api/weddings/:weddingId/billing-reconciliation` — Return budget and spending aggregates for the wedding. Supported monetary values are decimal strings: `max_budget`, `accepted_vendor_quote_total`, `total_extra_expenses`, `client_billed_expenses`, `business_expenses`, `unclassified_expenses`, `total_committed_costs`, `remaining_budget`, and `total_payments_received`. The response also includes `total_client_charges`, `client_balance`, and `vendor_payouts`, which are `null` while unavailable, plus `unresolved_metrics` explanations.
+
+  `total_committed_costs` is accepted vendor quote totals plus all recorded extra expenses. `remaining_budget` is `max_budget - total_committed_costs`; it may be negative. Expense classification separately includes `billed_to_client = TRUE`, `FALSE`, and `NULL`. Payments received include only `payments.status = 'PAID'`.
+
+  Client charges and client balance are unavailable until the agreed package amount is stored in an approved field. `max_budget` is a budget limit, not the agreed client charge. Vendor payouts are unavailable because no payout mechanism is defined. This endpoint does not use `weddings.actual_cost` in its totals. No database schema changes were made for this endpoint.
 
 
 * `GET /api/analytics/season-summary` — Aggregate seasonal revenue, costs, net profit, and cash flow.
