@@ -300,10 +300,22 @@ npm run dev
 * `PUT /api/tasks/:taskId/stage` — Update task stage (`TO_PLAN`, `IN_PROGRESS`, `DONE`).
 
 
-* `GET /api/weddings/:weddingId/schedule` — Retrieve chronological day-of timeline.
+* `POST /api/weddings/:weddingId/schedule` — Create a schedule event with a strict 24-hour `HH:MM` `event_time`.
 
 
-* `POST /api/weddings/:weddingId/vendor-checkins/:checkinId` — Record actual arrival time and flag delays.
+* `GET /api/weddings/:weddingId/schedule` — Retrieve the wedding schedule in `event_time` order; optionally filter by `status` (`PENDING`, `ACTIVE`, `COMPLETED`, `DELAYED`).
+
+
+* `PUT /api/weddings/:weddingId/schedule/:eventId` — Partially update an event's title, time, location, responsible person, or status.
+
+
+* `POST /api/weddings/:weddingId/vendor-checkins` — Create a vendor check-in with its scheduled arrival time.
+
+
+* `GET /api/weddings/:weddingId/vendor-checkins` — Retrieve wedding vendor check-ins; optionally filter by status (`PENDING`, `ARRIVED`, `DELAYED`).
+
+
+* `POST /api/weddings/:weddingId/vendor-checkins/:checkinId` — Record the actual arrival time (`HH:MM`), caller-supplied status, and optionally update notes.
 
 
 
