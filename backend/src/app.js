@@ -6,6 +6,7 @@ const helmet = require('helmet');
 const errorHandler = require('./middleware/errorHandler');
 const healthRoutes = require('./routes/healthRoutes');
 const quoteRoutes = require('./routes/quoteRoutes');
+const taskRoutes = require('./routes/taskRoutes');
 
 const app = express();
 const clientUrl = process.env.CLIENT_URL || 'http://localhost:5173';
@@ -17,6 +18,8 @@ app.use(express.json());
 app.use('/api/health', healthRoutes);
 app.use('/api/vendors', quoteRoutes.vendorRouter);
 app.use('/api/quotes', quoteRoutes.quoteRouter);
+app.use('/api/weddings', taskRoutes.weddingRouter);
+app.use('/api/tasks', taskRoutes.taskRouter);
 
 app.use((req, res, next) => {
   const error = new Error(`Route not found: ${req.method} ${req.originalUrl}`);
