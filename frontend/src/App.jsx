@@ -2,12 +2,9 @@ import { BrowserRouter, Navigate, Route, Routes } from 'react-router-dom'
 import AnimatedCard from './components/common/AnimatedCard.jsx'
 import { ToastProvider } from './context/ToastProvider.jsx'
 import MainLayout from './layouts/MainLayout.jsx'
+import Enquiries from './pages/Enquiries.jsx'
 
 const modules = [
-  {
-    path: 'enquiries',
-    title: 'Enquiries & Consultations',
-  },
   {
     path: 'agreements',
     title: 'Digital Agreements',
@@ -59,6 +56,7 @@ function App() {
         <Routes>
           <Route element={<MainLayout />}>
             <Route index element={<Navigate to="/enquiries" replace />} />
+            <Route path="enquiries" element={<Enquiries />} />
             {modules.map(({ path, title }) => (
               <Route
                 key={path}
