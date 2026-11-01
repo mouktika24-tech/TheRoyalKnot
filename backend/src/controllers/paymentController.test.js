@@ -331,7 +331,7 @@ test('malformed or non-object JSON request bodies return structured 400 response
   assert.equal(response.status, 400);
   assert.equal(body.success, false);
   assert.equal(body.error, 'Validation failed');
-  assert.deepEqual(body.details, ['Request body must be valid JSON']);
+  assert.deepEqual(body.details, []);
 
   response = await post('/3/record-payment', []);
   body = await response.json();

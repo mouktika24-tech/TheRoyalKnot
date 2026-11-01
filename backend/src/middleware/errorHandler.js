@@ -21,8 +21,9 @@ function errorHandler(error, req, res, next) {
       : statusCode >= 500
         ? 'Internal server error'
         : 'Request failed';
+
   const details = isInvalidJson
-    ? ['Request body must be valid JSON']
+    ? []
     : statusCode < 500 && Array.isArray(error.details)
       ? error.details.filter((detail) => typeof detail === 'string')
       : [];
