@@ -240,7 +240,14 @@ Start the backend server:
 ```bash
 npm run dev
 # Server runs on http://localhost:5000
+# Or use: npm start
 
+```
+
+Run the backend automated tests:
+
+```bash
+npm test
 ```
 
 ### 3. Frontend Configuration
@@ -266,10 +273,12 @@ npm run dev
 * `PUT /api/enquiries/:weddingId/consultation` — Schedule client consultation date and notes.
 
 
-* `POST /api/agreements/generate/:weddingId` — Auto-generate service agreement terms based on package scope.
+* `POST /api/agreements/generate/:weddingId` — Create one agreement for an existing wedding, or return the existing agreement if exactly one exists. If multiple agreements exist, returns `409 Conflict`. Newly created agreements have status `PENDING` and contain only the approved factual statement that the document records currently available system information and creates no additional contractual obligations, payment commitments, or legal terms. Returns `201 Created` for a new agreement and `200 OK` for an existing one.
 
 
-* `POST /api/agreements/:agreementId/sign` — Bind digital signature canvas data and confirm booking.
+* `GET /api/agreements/:weddingId` — Return the agreement and documented wedding details for the wedding. Returns `404 Not Found` if the wedding or its agreement does not exist and `409 Conflict` if multiple agreements exist. `max_budget` is labeled `Recorded Maximum Budget`; it is not an agreed package price. Nullable wedding values are preserved as `null`.
+
+* `POST /api/agreements/:agreementId/sign` — Sign a pending agreement using JSON fields `signer_name` (non-empty, at most 150 characters) and `signature_data` (`data:image/png;base64,...` or `data:image/jpeg;base64,...`). The decoded image may not exceed 1 MiB and must decode as a single PNG or JPEG within the configured dimensions. Returns `200 OK` with the signed agreement. Invalid input returns `400`; a missing agreement returns `404`; an already signed, rejected, or wedding-unlinked agreement returns `409`. Signing the agreement and confirming its wedding are performed in one transaction.
 
 
 
@@ -279,6 +288,7 @@ npm run dev
 
 
 * `POST /api/quotes` — Submit detailed vendor proposal with plate and overtime pricing.
+  Monetary fields (`price_per_plate`, `extra_hour_rate`, and `total_amount`) must be JSON strings containing positive decimal values with at most two decimal places. The maximums are `99999999.99` for the first two fields and `9999999999.99` for `total_amount`; for example, use `"2200.00"` rather than `2200`.
 
 
 * `GET /api/quotes/compare/:weddingId` — Fetch side-by-side comparison matrix for quotes.
@@ -299,10 +309,22 @@ npm run dev
 * `PUT /api/tasks/:taskId/stage` — Update task stage (`TO_PLAN`, `IN_PROGRESS`, `DONE`).
 
 
-* `GET /api/weddings/:weddingId/schedule` — Retrieve chronological day-of timeline.
+* `POST /api/weddings/:weddingId/schedule` — Create a schedule event with a strict 24-hour `HH:MM` `event_time`.
 
 
-* `POST /api/weddings/:weddingId/vendor-checkins/:checkinId` — Record actual arrival time and flag delays.
+* `GET /api/weddings/:weddingId/schedule` — Retrieve the wedding schedule in `event_time` order; optionally filter by `status` (`PENDING`, `ACTIVE`, `COMPLETED`, `DELAYED`).
+
+
+* `PUT /api/weddings/:weddingId/schedule/:eventId` — Partially update an event's title, time, location, responsible person, or status.
+
+
+* `POST /api/weddings/:weddingId/vendor-checkins` — Create a vendor check-in with its scheduled arrival time.
+
+
+* `GET /api/weddings/:weddingId/vendor-checkins` — Retrieve wedding vendor check-ins; optionally filter by status (`PENDING`, `ARRIVED`, `DELAYED`).
+
+
+* `POST /api/weddings/:weddingId/vendor-checkins/:checkinId` — Record the actual arrival time (`HH:MM`), caller-supplied status, and optionally update notes.
 
 
 
@@ -313,11 +335,29 @@ npm run dev
 
 * `POST /api/payments/:paymentId/record-payment` — Mark client payment milestone as paid.
 
+#### Payment API details
 
-* `POST /api/expenses/extra/:weddingId` — Record post-wedding additions (extra plates, overtime).
+`POST /api/payments/create-plan/:weddingId` takes no request body. It creates a booking deposit (20%, due today), an advance (50%, due 30 days before the wedding start date), and a final balance (30%, due 3 days after the wedding end date) in one transaction. Success returns `201` with `{ "success": true, "data": { "payments": [...] } }`. Invalid IDs return `400`; missing weddings return `404`; an existing or partial payment plan returns `409`.
+
+The repository does not define an agreed client-price source. `weddings.max_budget` is a maximum, and `weddings.actual_cost` is used for vendor costs; neither is used as the payment-plan basis. Until an approved client amount is established and persisted, plan creation returns `409` with an actionable error and creates no payment records. The seed script does not create payment rows because it has no approved price source.
+
+`POST /api/payments/:paymentId/record-payment` accepts an optional JSON body such as `{ "payment_method": "Bank transfer" }`. The method, if supplied, must be a non-empty string of at most 50 characters. Success marks the record `PAID`, sets `paid_date` to the database's current date, and returns `{ "success": true, "data": { "payment": {...} } }`. Invalid IDs or methods return `400`, missing payments return `404`, and attempts to record an already-paid payment return `409`. This endpoint records payment status only; it does not process a payment.
+
+The payment API tests use a stubbed PostgreSQL pool and do not require a live database.
 
 
-* `GET /api/weddings/:weddingId/billing-reconciliation` — Calculate net client balance and vendor payouts.
+* `POST /api/expenses/extra/:weddingId` — Record an additional wedding expense. The JSON body requires `description` (non-empty, at most 250 characters) and `unit_rate` (a positive decimal string with at most two decimal places, maximum `"99999999.99"`). Optional fields are `extra_units` (positive integer, default `1`), `vendor_id` (positive integer or `null`), and `billed_to_client` (boolean, default `true`). The server calculates `total_amount` exactly as `extra_units * unit_rate`; it is not supplied by the caller.
+
+  Example request: `{"description":"Additional chairs","extra_units":10,"unit_rate":"150.50","vendor_id":null,"billed_to_client":true}`.
+
+  Success returns HTTP `201` with `{ "success": true, "data": { "expense_id": 1, "wedding_id": 1, "vendor_id": null, "description": "Additional chairs", "extra_units": 10, "unit_rate": "150.50", "total_amount": "1505.00", "billed_to_client": true } }`. Invalid input returns HTTP `400`; a missing wedding or supplied vendor returns HTTP `404`.
+
+
+* `GET /api/weddings/:weddingId/billing-reconciliation` — Return budget and spending aggregates for the wedding. Supported monetary values are decimal strings: `max_budget`, `accepted_vendor_quote_total`, `total_extra_expenses`, `client_billed_expenses`, `business_expenses`, `unclassified_expenses`, `total_committed_costs`, `remaining_budget`, and `total_payments_received`. The response also includes `total_client_charges`, `client_balance`, and `vendor_payouts`, which are `null` while unavailable, plus `unresolved_metrics` explanations.
+
+  `total_committed_costs` is accepted vendor quote totals plus all recorded extra expenses. `remaining_budget` is `max_budget - total_committed_costs`; it may be negative. Expense classification separately includes `billed_to_client = TRUE`, `FALSE`, and `NULL`. Payments received include only `payments.status = 'PAID'`.
+
+  Client charges and client balance are unavailable until the agreed package amount is stored in an approved field. `max_budget` is a budget limit, not the agreed client charge. Vendor payouts are unavailable because no payout mechanism is defined. This endpoint does not use `weddings.actual_cost` in its totals. No database schema changes were made for this endpoint.
 
 
 * `GET /api/analytics/season-summary` — Aggregate seasonal revenue, costs, net profit, and cash flow.
