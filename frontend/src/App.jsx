@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { AnimatePresence, motion } from 'framer-motion';
 import { 
   Users, 
   FileText, 
@@ -162,12 +163,22 @@ export default function App() {
           )}
 
           <div className="p-8">
-            {activeTab === 'kanban' && <TaskKanban />}
-            {activeTab === 'schedule' && (
-              scheduleSubView === 'timeline' ? <LiveScheduleTimeline /> : <VendorCheckinBoard />
-            )}
-            {activeTab === 'billing' && <ExpenseReconcilerModal />}
-            {activeTab === 'founder' && <FounderSeasonDashboard />}
+            <AnimatePresence mode="wait" initial={false}>
+              <motion.div
+                key={`${activeTab}${activeTab === 'schedule' ? scheduleSubView : ''}`}
+                initial={{ opacity: 0, y: 8 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -8 }}
+                transition={{ duration: 0.22, ease: 'easeOut' }}
+              >
+                {activeTab === 'kanban' && <TaskKanban />}
+                {activeTab === 'schedule' && (
+                  scheduleSubView === 'timeline' ? <LiveScheduleTimeline /> : <VendorCheckinBoard />
+                )}
+                {activeTab === 'billing' && <ExpenseReconcilerModal />}
+                {activeTab === 'founder' && <FounderSeasonDashboard />}
+              </motion.div>
+            </AnimatePresence>
           </div>
         </main>
       </div>

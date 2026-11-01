@@ -269,7 +269,7 @@ function TaskKanban({
         </p>
       )}
 
-      <section aria-label="Plan progress" className="rounded-xl border border-[#ECE7E1] bg-white p-5 shadow-sm">
+      <section aria-label="Plan progress" className="rounded-xl border border-[#ECE7E1]/80 bg-white/85 p-5 shadow-sm backdrop-blur-md transition-all duration-200 hover:[translate:0_-2px] hover:shadow-md">
         <div className="grid grid-cols-2 gap-4 sm:grid-cols-4">
           <div>
             <p className="text-xs font-medium text-slate-600">Total tasks</p>
@@ -350,7 +350,7 @@ function TaskKanban({
             <section
               key={key}
               aria-labelledby={`task-column-${key}`}
-              className="flex min-h-72 flex-col rounded-xl border border-[#ECE7E1] bg-white p-3 sm:p-4"
+              className="flex min-h-72 flex-col rounded-xl border border-[#ECE7E1]/80 bg-white/85 p-3 shadow-sm backdrop-blur-md transition-all duration-200 hover:[translate:0_-2px] hover:shadow-md sm:p-4"
             >
               <header className="mb-3 flex items-center justify-between gap-2 border-b border-slate-800 pb-3">
                 <h2 id={`task-column-${key}`} className="flex items-center gap-2 text-sm font-semibold text-slate-900">
@@ -381,7 +381,7 @@ function TaskKanban({
                         animate={{ opacity: 1, scale: 1 }}
                         exit={{ opacity: 0, scale: 0.97 }}
                         transition={{ duration: 0.2 }}
-                        className="rounded-xl border border-slate-700 bg-white p-3.5 shadow-sm transition-colors hover:border-[#D4AF37]/70 hover:shadow-lg hover:shadow-[#D4AF37]/5"
+                        className="rounded-xl border border-[#ECE7E1]/80 bg-white/85 p-3.5 shadow-sm backdrop-blur-md transition-all duration-200 hover:[translate:0_-2px] hover:border-[#D4AF37]/70 hover:shadow-md"
                       >
                         <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
                           <span className="rounded-full border border-[#D4AF37]/30 bg-[#722F37]/30 px-2.5 py-1 text-[10px] font-semibold uppercase tracking-wide text-[#F3E5AB]">
