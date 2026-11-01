@@ -326,15 +326,12 @@ function VendorCheckinBoard({
   };
 
   return (
-    <section aria-labelledby="vendor-checkin-title" className="min-h-screen bg-white p-4 text-slate-900 sm:p-6">
-      <header className="flex flex-col justify-between gap-4 border-b border-slate-200 pb-5 md:flex-row md:items-center">
+    <section aria-labelledby="vendor-checkin-title" className="min-h-screen bg-[#FFFDF9] p-4 text-[#2A211D] sm:p-6">
+      <header className="flex flex-col justify-between gap-4 border-b border-[#ECE7E1] pb-5 md:flex-row md:items-center">
         <div>
-          <div className="flex flex-wrap items-center gap-2">
-            <p className="text-xs font-semibold uppercase tracking-[0.18em] text-[#D4AF37]">Scene 4 · On-site dispatch</p>
-            <span className="rounded-full border border-[#722F37]/30 bg-[#722F37]/10 px-2.5 py-1 text-xs font-medium text-[#722F37]">Live terminal</span>
-          </div>
-          <h1 id="vendor-checkin-title" className="mt-1 text-2xl font-bold tracking-tight text-slate-900 sm:text-3xl">Vendor Arrival &amp; Logistics Tracker</h1>
-          <p className="mt-1 text-sm text-slate-500">Monitor vendor arrivals, scheduled checkpoints, and on-site delay notes.</p>
+          <p className="mb-1 block text-xs font-medium uppercase tracking-[0.2em] text-[#8C827A]">THE ROYAL KNOT WORKSPACE</p>
+          <h1 id="vendor-checkin-title" className="mt-1 font-serif text-3xl font-bold tracking-tight text-[#2A211D]">Vendor Arrival Tracker</h1>
+          <p className="mt-1 text-sm text-[#7A7067]">Monitor vendor arrivals, scheduled checkpoints, and on-site delay notes.</p>
         </div>
       </header>
 
@@ -345,28 +342,28 @@ function VendorCheckinBoard({
       )}
 
       <section aria-label="Vendor arrival summary" className="my-6 grid grid-cols-2 gap-4 md:grid-cols-4">
-        <article className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
+        <article className="rounded-xl border border-[#ECE7E1] bg-white p-5 shadow-sm">
           <div className="flex items-center justify-between gap-2">
             <span className="text-xs font-medium text-slate-500">Assigned vendors</span>
             <Users size={17} className="text-slate-400" aria-hidden="true" />
           </div>
           <p className="mt-1 text-2xl font-bold text-slate-900">{totalVendors}</p>
         </article>
-        <article className="rounded-xl border border-emerald-200 bg-emerald-50/50 p-4 shadow-sm">
+        <article className="rounded-xl border border-[#ECE7E1] bg-white p-5 shadow-sm">
           <div className="flex items-center justify-between gap-2">
             <span className="text-xs font-medium text-emerald-800">Checked in</span>
             <CheckCircle2 size={17} className="text-emerald-600" aria-hidden="true" />
           </div>
           <p className="mt-1 text-2xl font-bold text-emerald-700">{arrivedCount}</p>
         </article>
-        <article className="rounded-xl border border-amber-200 bg-amber-50/50 p-4 shadow-sm">
+        <article className="rounded-xl border border-[#ECE7E1] bg-white p-5 shadow-sm">
           <div className="flex items-center justify-between gap-2">
             <span className="text-xs font-medium text-amber-800">En route / pending</span>
             <Clock3 size={17} className="text-amber-600" aria-hidden="true" />
           </div>
           <p className="mt-1 text-2xl font-bold text-amber-700">{pendingCount}</p>
         </article>
-        <article className={`rounded-xl border p-4 shadow-sm transition-colors ${delayedCount ? 'border-rose-300 bg-rose-50' : 'border-slate-200 bg-white'}`}>
+        <article className={`rounded-xl border border-[#ECE7E1] bg-white p-5 shadow-sm transition-colors ${delayedCount ? 'ring-1 ring-rose-200' : ''}`}>
           <div className="flex items-center justify-between gap-2">
             <span className="text-xs font-medium text-rose-800">Delayed alerts</span>
             <AlertTriangle size={17} className={delayedCount ? 'animate-pulse text-rose-600' : 'text-slate-400'} aria-hidden="true" />

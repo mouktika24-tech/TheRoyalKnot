@@ -318,15 +318,15 @@ function ExpenseReconcilerModal({
   if (!isOpen) return null;
 
   return (
-    <section aria-labelledby="expense-reconciler-title" className="min-h-screen bg-white p-4 text-slate-900 sm:p-6">
-      <header className="flex flex-col justify-between gap-4 border-b border-slate-200 pb-5 md:flex-row md:items-center">
+    <section aria-labelledby="expense-reconciler-title" className="min-h-screen bg-[#FFFDF9] p-4 text-[#2A211D] sm:p-6">
+      <header className="flex flex-col justify-between gap-4 border-b border-[#ECE7E1] pb-5 md:flex-row md:items-center">
         <div>
-          <div className="flex flex-wrap items-center gap-2">
-            <p className="text-xs font-semibold uppercase tracking-[0.18em] text-[#D4AF37]">Scene 5 · Post-event reconciliation</p>
-            <span className="rounded-full border border-[#722F37]/30 bg-[#722F37]/10 px-2.5 py-1 text-xs font-medium text-[#722F37]">Audit settlement</span>
+          <div>
+            <p className="mb-1 block text-xs font-medium uppercase tracking-[0.2em] text-[#8C827A]">THE ROYAL KNOT WORKSPACE</p>
+            <span className="inline-flex rounded-full border border-[#722F37]/30 bg-[#722F37]/10 px-2.5 py-1 text-xs font-medium text-[#722F37]">Audit settlement</span>
           </div>
-          <h1 id="expense-reconciler-title" className="mt-1 text-2xl font-bold tracking-tight text-slate-900 sm:text-3xl">Post-Wedding Bill Reconciler</h1>
-          <p className="mt-1 text-sm text-slate-500">Reconcile on-site incidentals against the approved contract quote.</p>
+          <h1 id="expense-reconciler-title" className="mt-1 font-serif text-3xl font-bold tracking-tight text-[#2A211D]">Billing &amp; Reconciliation</h1>
+          <p className="mt-1 text-sm text-[#7A7067]">Reconcile on-site incidentals against the approved contract quote.</p>
         </div>
         {onClose && (
           <button
@@ -355,22 +355,22 @@ function ExpenseReconcilerModal({
       )}
 
       <section aria-label="Reconciliation summary" className="my-6 grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
-        <article className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
+        <article className="rounded-xl border border-[#ECE7E1] bg-white p-5 shadow-sm">
           <p className="text-xs font-medium text-slate-500">Original contract quote</p>
           <p className="mt-2 text-xl font-bold text-slate-900">{formatCurrency(ORIGINAL_QUOTE)}</p>
           <p className="mt-1 text-[11px] text-slate-400">Baseline approved at booking</p>
         </article>
-        <article className="rounded-xl border border-amber-200 bg-amber-50/50 p-4 shadow-sm">
+        <article className="rounded-xl border border-[#ECE7E1] bg-white p-5 shadow-sm">
           <p className="text-xs font-medium text-amber-800">Extra expenses incurred</p>
           <p className="mt-2 text-xl font-bold text-amber-700">{formatCentsAsCurrency(totals.incurred)}</p>
           <p className="mt-1 text-[11px] text-slate-500">{expenses.length} ledger {expenses.length === 1 ? 'entry' : 'entries'}</p>
         </article>
-        <article className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
+        <article className="rounded-xl border border-[#ECE7E1] bg-white p-5 shadow-sm">
           <p className="text-xs font-medium text-slate-500">Agency-absorbed expenses</p>
           <p className="mt-2 text-xl font-bold text-slate-700">{formatCentsAsCurrency(totals.agencyAbsorbed)}</p>
           <p className="mt-1 text-[11px] text-slate-400">Not included in client invoice</p>
         </article>
-        <article className="rounded-xl border border-emerald-300 bg-emerald-50/50 p-4 shadow-sm">
+        <article className="rounded-xl border border-[#ECE7E1] bg-white p-5 shadow-sm">
           <div className="flex items-center justify-between gap-2">
             <p className="text-xs font-semibold text-emerald-800">Final reconciled total</p>
             {isAudited ? <CheckCircle2 size={17} className="text-emerald-600" aria-hidden="true" /> : <AlertCircle size={17} className="text-amber-600" aria-hidden="true" />}
@@ -387,7 +387,7 @@ function ExpenseReconcilerModal({
       </section>
 
       <div className="grid items-start gap-6 xl:grid-cols-[minmax(18rem,0.8fr)_minmax(0,2fr)]">
-        <section className="h-fit rounded-xl border border-slate-200 bg-white p-5 shadow-sm">
+        <section className="h-fit rounded-xl border border-[#ECE7E1] bg-white p-5 shadow-sm">
           <div className="flex items-center gap-2 border-b border-slate-200 pb-3">
             <Receipt size={17} className="text-[#722F37]" aria-hidden="true" />
             <h2 className="text-sm font-bold text-slate-900">Log Extra Expense</h2>
@@ -487,7 +487,7 @@ function ExpenseReconcilerModal({
           </form>
         </section>
 
-        <section aria-labelledby="expense-ledger-title" className="min-w-0 rounded-xl border border-slate-200 bg-white p-5 shadow-sm">
+        <section aria-labelledby="expense-ledger-title" className="min-w-0 rounded-xl border border-[#ECE7E1] bg-white p-5 shadow-sm">
           <header className="flex flex-col justify-between gap-2 border-b border-slate-200 pb-3 sm:flex-row sm:items-center">
             <div>
               <h2 id="expense-ledger-title" className="text-sm font-bold text-slate-900">Itemized Extra Expenses</h2>

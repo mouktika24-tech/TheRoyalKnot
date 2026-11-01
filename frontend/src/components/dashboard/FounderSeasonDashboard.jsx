@@ -282,19 +282,19 @@ function FounderSeasonDashboard({
   const displayedError = typeof error === 'string' ? error : error?.message;
 
   return (
-    <section aria-labelledby="founder-season-title" className="min-h-screen space-y-6 bg-white p-4 text-slate-900 sm:p-6">
-      <header className="flex flex-col justify-between gap-4 border-b border-slate-200 pb-5 md:flex-row md:items-center">
+    <section aria-labelledby="founder-season-title" className="min-h-screen space-y-6 bg-[#FFFDF9] p-4 text-[#2A211D] sm:p-6">
+      <header className="flex flex-col justify-between gap-4 border-b border-[#ECE7E1] pb-5 md:flex-row md:items-center">
         <div>
           <div className="flex flex-wrap items-center gap-2">
-            <p className="text-xs font-semibold uppercase tracking-[0.18em] text-champagneGold">Scene 6 Executive Terminal</p>
+            <p className="mb-1 block w-full text-xs font-medium uppercase tracking-[0.2em] text-[#8C827A]">THE ROYAL KNOT WORKSPACE</p>
             <span className="rounded-full border border-royalMaroon/30 bg-royalMaroon/10 px-2.5 py-1 text-xs font-medium text-royalMaroon">
               Winter Season 2026–27
             </span>
           </div>
-          <h1 id="founder-season-title" className="mt-1 text-2xl font-bold tracking-tight text-slate-900 sm:text-3xl">
-            Founder Season Dashboard
+          <h1 id="founder-season-title" className="mt-1 font-serif text-3xl font-bold tracking-tight text-[#2A211D]">
+            Founder&apos;s Season Review
           </h1>
-          <p className="mt-1 text-sm text-slate-500">
+          <p className="mt-1 text-sm text-[#7A7067]">
             Financial performance and palace operations across Jaipur and Udaipur.
           </p>
         </div>
@@ -302,7 +302,7 @@ function FounderSeasonDashboard({
           type="button"
           onClick={exportCSV}
           disabled={loading || filteredWeddings.length === 0}
-          className="inline-flex min-h-10 items-center justify-center gap-2 self-start rounded-lg bg-royalMaroon px-4 py-2.5 text-sm font-semibold text-white shadow-sm transition-colors hover:bg-royalMaroonDark focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-champagneGold disabled:cursor-not-allowed disabled:opacity-50 md:self-auto"
+          className="inline-flex min-h-10 items-center justify-center gap-2 self-start rounded-lg bg-[#722F37] px-4 py-2 text-xs font-medium text-white shadow-sm transition-colors hover:bg-[#5B1F27] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#D4AF37] disabled:cursor-not-allowed disabled:opacity-50 md:self-auto"
         >
           <Download size={16} aria-hidden="true" />
           Export Season Audit CSV

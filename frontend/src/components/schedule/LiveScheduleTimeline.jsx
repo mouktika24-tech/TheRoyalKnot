@@ -223,16 +223,16 @@ function LiveScheduleTimeline({
   };
 
   return (
-    <section aria-labelledby="live-schedule-title" className="min-h-screen space-y-6 rounded-2xl bg-white p-4 text-slate-900 sm:p-6">
-      <header className="flex flex-col justify-between gap-4 border-b border-slate-800 pb-5 sm:flex-row sm:items-center">
+    <section aria-labelledby="live-schedule-title" className="min-h-screen space-y-6 bg-[#FFFDF9] p-4 text-[#2A211D] sm:p-6">
+      <header className="flex flex-col justify-between gap-4 border-b border-[#ECE7E1] pb-5 sm:flex-row sm:items-center">
         <div className="flex items-start gap-3">
-          <span className="rounded-xl bg-[#722F37]/30 p-3 text-[#D4AF37]" aria-hidden="true">
+          <span className="rounded-xl bg-[#FCF6EC] p-3 text-[#722F37]" aria-hidden="true">
             <CalendarDays size={22} />
           </span>
           <div>
-            <p className="text-xs font-semibold uppercase tracking-[0.16em] text-[#D4AF37]">Rambagh Palace, Jaipur</p>
-            <h1 id="live-schedule-title" className="mt-1 text-2xl font-semibold text-slate-900 sm:text-3xl">The Big Day Schedule</h1>
-            <p className="mt-1 text-sm text-slate-400">Winter Destination Wedding</p>
+            <p className="mb-1 block text-xs font-medium uppercase tracking-[0.2em] text-[#8C827A]">THE ROYAL KNOT WORKSPACE</p>
+            <h1 id="live-schedule-title" className="mt-1 font-serif text-3xl font-bold tracking-tight text-[#2A211D]">Big Day Live Schedule</h1>
+            <p className="mt-1 text-sm text-[#7A7067]">Rambagh Palace, Jaipur · Winter Destination Wedding</p>
           </div>
         </div>
         <button
@@ -243,7 +243,7 @@ function LiveScheduleTimeline({
             setIsAddModalOpen(true);
           }}
           disabled={loading}
-          className="inline-flex min-h-11 shrink-0 items-center justify-center gap-2 rounded-xl border border-[#D4AF37]/40 bg-gradient-to-r from-[#722F37] to-[#8B3A44] px-4 py-2.5 text-sm font-semibold text-[#FFFDF9] shadow-md shadow-[#722F37]/30 transition hover:from-[#8B3A44] hover:to-[#A0424E] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#D4AF37] disabled:cursor-not-allowed disabled:opacity-60"
+          className="inline-flex min-h-10 shrink-0 items-center justify-center gap-2 rounded-lg bg-[#722F37] px-4 py-2 text-xs font-medium text-white shadow-sm transition-colors hover:bg-[#5B1F27] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#D4AF37] disabled:cursor-not-allowed disabled:opacity-60"
         >
           <Plus size={17} aria-hidden="true" />
           Add Event
@@ -290,7 +290,7 @@ function LiveScheduleTimeline({
         )}
       </section>
 
-      <div className="rounded-2xl border border-slate-800 bg-white p-4 shadow-sm sm:p-6">
+      <div className="rounded-xl border border-[#ECE7E1] bg-white p-5 shadow-sm sm:p-6">
         {loading ? (
           <p role="status" className="py-10 text-center text-sm text-slate-400">Loading the wedding schedule…</p>
         ) : sortedEvents.length === 0 ? (
@@ -417,16 +417,16 @@ function LiveScheduleTimeline({
               role="dialog"
               aria-modal="true"
               aria-labelledby="add-schedule-event-title"
-              className="my-auto w-full max-w-lg rounded-2xl border border-slate-700 bg-white text-slate-900 shadow-2xl"
+              className="my-auto w-full max-w-lg rounded-xl border border-[#ECE7E1] bg-white text-[#2A211D] shadow-sm"
               initial={{ opacity: 0, y: 14, scale: 0.98 }}
               animate={{ opacity: 1, y: 0, scale: 1 }}
               exit={{ opacity: 0, y: 8, scale: 0.98 }}
               transition={{ duration: 0.18 }}
             >
-              <header className="flex items-start justify-between gap-4 border-b border-slate-800 p-5">
+              <header className="flex items-start justify-between gap-4 border-b border-[#ECE7E1] p-5">
                 <div>
-                  <p className="text-xs font-semibold uppercase tracking-[0.16em] text-[#D4AF37]">Wedding day schedule</p>
-                  <h2 id="add-schedule-event-title" className="mt-1 text-xl font-semibold text-slate-900">Add a ceremony or event</h2>
+                  <p className="mb-1 block text-xs font-medium uppercase tracking-[0.2em] text-[#8C827A]">THE ROYAL KNOT WORKSPACE</p>
+                  <h2 id="add-schedule-event-title" className="mt-1 font-serif text-xl font-semibold text-[#2A211D]">Add a ceremony or event</h2>
                 </div>
                 <button
                   type="button"

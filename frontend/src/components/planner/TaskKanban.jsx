@@ -245,18 +245,18 @@ function TaskKanban({
   };
 
   return (
-    <section aria-labelledby="task-kanban-title" className="min-h-screen space-y-6 bg-white p-4 text-slate-900 sm:p-6">
-      <header className="flex flex-col justify-between gap-4 border-b border-slate-800 pb-5 sm:flex-row sm:items-center">
+    <section aria-labelledby="task-kanban-title" className="min-h-screen space-y-6 bg-[#FFFDF9] p-4 text-[#2A211D] sm:p-6">
+      <header className="flex flex-col justify-between gap-4 border-b border-[#ECE7E1] pb-5 sm:flex-row sm:items-center">
         <div>
-          <p className="text-xs font-semibold uppercase tracking-[0.18em] text-[#D4AF37]">Scene 3 · Wedding operations</p>
-          <h1 id="task-kanban-title" className="mt-1 text-2xl font-semibold text-slate-900 sm:text-3xl">The Instant Wedding Plan</h1>
-          <p className="mt-1 text-sm text-slate-400">A live view of the 28 operational tasks for your celebration.</p>
+          <p className="mb-1 block text-xs font-medium uppercase tracking-[0.2em] text-[#8C827A]">THE ROYAL KNOT WORKSPACE</p>
+          <h1 id="task-kanban-title" className="mt-1 font-serif text-3xl font-bold tracking-tight text-[#2A211D]">The Instant Wedding Plan</h1>
+          <p className="mt-1 text-sm text-[#7A7067]">A live view of the 28 operational tasks for your celebration.</p>
         </div>
         <button
           type="button"
           onClick={generatePlan}
           disabled={loading || isLoadingTasks || isGenerating}
-          className="inline-flex min-h-11 shrink-0 items-center justify-center gap-2 rounded-xl border border-[#D4AF37]/40 bg-gradient-to-r from-[#722F37] to-[#8B3A44] px-4 py-2.5 text-sm font-semibold text-[#FFFDF9] shadow-md shadow-[#722F37]/30 transition hover:from-[#8B3A44] hover:to-[#A0424E] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#D4AF37] disabled:cursor-not-allowed disabled:opacity-60"
+          className="inline-flex min-h-10 shrink-0 items-center justify-center gap-2 rounded-lg bg-[#722F37] px-4 py-2 text-xs font-medium text-white shadow-sm transition-colors hover:bg-[#5B1F27] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#D4AF37] disabled:cursor-not-allowed disabled:opacity-60"
         >
           <Sparkles size={17} className="text-[#F3E5AB]" aria-hidden="true" />
           {isGenerating ? 'Generating plan…' : 'Generate 28-Task Plan'}
@@ -269,7 +269,7 @@ function TaskKanban({
         </p>
       )}
 
-      <section aria-label="Plan progress" className="rounded-2xl border border-slate-800 bg-white p-4 shadow-sm sm:p-5">
+      <section aria-label="Plan progress" className="rounded-xl border border-[#ECE7E1] bg-white p-5 shadow-sm">
         <div className="grid grid-cols-2 gap-4 sm:grid-cols-4">
           <div>
             <p className="text-xs font-medium text-slate-600">Total tasks</p>
@@ -350,7 +350,7 @@ function TaskKanban({
             <section
               key={key}
               aria-labelledby={`task-column-${key}`}
-              className="flex min-h-72 flex-col rounded-2xl border border-slate-800 bg-white p-3 sm:p-4"
+              className="flex min-h-72 flex-col rounded-xl border border-[#ECE7E1] bg-white p-3 sm:p-4"
             >
               <header className="mb-3 flex items-center justify-between gap-2 border-b border-slate-800 pb-3">
                 <h2 id={`task-column-${key}`} className="flex items-center gap-2 text-sm font-semibold text-slate-900">
