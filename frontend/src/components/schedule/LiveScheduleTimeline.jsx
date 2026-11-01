@@ -1,11 +1,12 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
+import { opsApi } from '../../services/opsApi.js';
+import { mockScheduleEvents } from '../../mock/scaleData.js';
 import {
   CalendarDays,
   Check,
   MapPin,
   Plus,
-  Radio,
   UserRound,
   X,
 } from 'lucide-react';
@@ -15,16 +16,6 @@ const STATUSES = [
   { key: 'ACTIVE', label: 'Live Now', classes: 'border-emerald-500/40 bg-emerald-500/20 text-emerald-400' },
   { key: 'COMPLETED', label: 'Completed', classes: 'border-blue-500/40 bg-blue-500/20 text-blue-400' },
   { key: 'DELAYED', label: 'Delayed', classes: 'animate-pulse border-[#EF4444]/40 bg-[#EF4444]/15 text-[#F87171]' },
-];
-
-const INITIAL_EVENTS = [
-  { event_id: 1, title: 'Bride & Groom Royal Portrait Session', event_time: '14:00', location: 'Palace Gardens & Peacock Courtyard', responsible_person: 'Ananya (Vendor Ops)', status: 'COMPLETED', notes: 'Drone shots and vintage corridor portraits finalized.' },
-  { event_id: 2, title: 'Rajasthani Dholak & Welcome Drummer Staging', event_time: '15:30', location: 'Grand Heritage Porch', responsible_person: 'Vikram (Logistics)', status: 'COMPLETED', notes: '12 drummers stationed; cold rose water served.' },
-  { event_id: 3, title: 'Groom Baraat Procession & Vintage Car Arrival', event_time: '16:00', location: 'Main Palace Gate → Central Driveway', responsible_person: 'Vikram (Logistics)', status: 'ACTIVE', notes: 'Vintage 1938 Rolls Royce leading; guest flower showers underway.' },
-  { event_id: 4, title: 'Varmala Royal Garland Exchange', event_time: '17:30', location: 'Courtyard Elevated Marble Stage', responsible_person: 'Aarav (Decor Lead)', status: 'PENDING', notes: 'Fresh lotus garlands inspected and kept chilled.' },
-  { event_id: 5, title: 'Vedic Pheras & Wedding Vows', event_time: '19:00', location: 'Lakeside Heritage Mandap', responsible_person: 'Pooja (Hospitality)', status: 'PENDING', notes: 'Priest samagri ready; 400 cushioned royal chairs arranged.' },
-  { event_id: 6, title: 'Royal Feast & Grand Banquet Reception', event_time: '20:30', location: 'Grand Maharani Ballroom', responsible_person: 'Vikram (Logistics)', status: 'PENDING', notes: 'Caterer live stations prepped; couple grand spotlight entry synced.' },
-  { event_id: 7, title: 'Bidaai Ceremony & Royal Vintage Departure', event_time: '23:00', location: 'East Archway Gate', responsible_person: 'Pooja (Hospitality)', status: 'PENDING', notes: 'Luggage transport vehicles dispatched to airport and hotels.' },
 ];
 
 function normalizeEvent(event, index) {
@@ -52,6 +43,7 @@ function normalizeEvent(event, index) {
     title,
     event_time: time,
     location,
+    event_date: typeof event.event_date === 'string' ? event.event_date : '2026-12-18',
     responsible_person: typeof coordinator === 'string' && coordinator.trim()
       ? coordinator.trim()
       : 'Wedding coordinator',
@@ -61,7 +53,9 @@ function normalizeEvent(event, index) {
 }
 
 function sortEvents(events) {
-  return [...events].sort((a, b) => a.event_time.localeCompare(b.event_time));
+  return [...events].sort((a, b) => (
+    a.event_date.localeCompare(b.event_date) || a.event_time.localeCompare(b.event_time)
+  ));
 }
 
 function getErrorMessage(error, fallback) {
@@ -80,10 +74,12 @@ function LiveScheduleTimeline({
   onStatusChange,
 }) {
   const [events, setEvents] = useState(() => sortEvents(
-    (Array.isArray(suppliedEvents) ? suppliedEvents : INITIAL_EVENTS)
+    (Array.isArray(suppliedEvents) ? suppliedEvents : mockScheduleEvents)
       .map(normalizeEvent)
       .filter(Boolean),
   ));
+  const [isLoadingEvents, setIsLoadingEvents] = useState(false);
+  const [selectedDay, setSelectedDay] = useState('ALL');
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const [pendingEventIds, setPendingEventIds] = useState(() => new Set());
   const [actionError, setActionError] = useState('');
@@ -95,7 +91,27 @@ function LiveScheduleTimeline({
   useEffect(() => {
     if (Array.isArray(suppliedEvents)) {
       setEvents(sortEvents(suppliedEvents.map(normalizeEvent).filter(Boolean)));
+      setIsLoadingEvents(false);
+      return undefined;
     }
+
+    let isMounted = true;
+    opsApi.getSchedule(1, mockScheduleEvents)
+      .then((data) => {
+        if (isMounted && Array.isArray(data)) {
+          setEvents(sortEvents(data.map(normalizeEvent).filter(Boolean)));
+        }
+      })
+      .catch((loadError) => {
+        if (isMounted) setActionError(getErrorMessage(loadError, 'Could not load wedding schedule.'));
+      })
+      .finally(() => {
+        if (isMounted) setIsLoadingEvents(false);
+      });
+
+    return () => {
+      isMounted = false;
+    };
   }, [suppliedEvents]);
 
   useEffect(() => {
@@ -137,6 +153,14 @@ function LiveScheduleTimeline({
   }, [isAddModalOpen]);
 
   const sortedEvents = useMemo(() => sortEvents(events), [events]);
+  const scheduleDays = useMemo(() => (
+    [...new Map(sortedEvents.map((event) => [event.event_date, event.day ?? event.event_date])).entries()]
+  ), [sortedEvents]);
+  const visibleEvents = useMemo(() => (
+    selectedDay === 'ALL'
+      ? sortedEvents
+      : sortedEvents.filter((event) => event.event_date === selectedDay)
+  ), [selectedDay, sortedEvents]);
   const activeEvent = sortedEvents.find((event) => event.status === 'ACTIVE');
   const errorMessage = actionError || (
     typeof externalError === 'string'
@@ -242,7 +266,7 @@ function LiveScheduleTimeline({
             setFormError('');
             setIsAddModalOpen(true);
           }}
-          disabled={loading}
+          disabled={loading || isLoadingEvents}
           className="inline-flex min-h-10 shrink-0 items-center justify-center gap-2 rounded-lg bg-[#722F37] px-4 py-2 text-xs font-medium text-white shadow-sm transition-colors hover:bg-[#5B1F27] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#D4AF37] disabled:cursor-not-allowed disabled:opacity-60"
         >
           <Plus size={17} aria-hidden="true" />
@@ -291,7 +315,7 @@ function LiveScheduleTimeline({
       </section>
 
       <div className="rounded-xl border border-[#ECE7E1] bg-white p-5 shadow-sm sm:p-6">
-        {loading ? (
+        {loading || isLoadingEvents ? (
           <p role="status" className="py-10 text-center text-sm text-slate-400">Loading the wedding schedule…</p>
         ) : sortedEvents.length === 0 ? (
           <div className="py-10 text-center">
@@ -299,8 +323,25 @@ function LiveScheduleTimeline({
             <p className="text-sm text-slate-400">No schedule events have been added yet.</p>
           </div>
         ) : (
+          <>
+          <label className="mb-5 flex min-h-10 w-full items-center gap-2 rounded-lg border border-slate-200 bg-white px-3 text-xs text-slate-600 sm:ml-auto sm:w-80">
+            <span className="shrink-0">Show day</span>
+            <select
+              value={selectedDay}
+              onChange={(event) => setSelectedDay(event.target.value)}
+              className="min-h-9 w-full bg-transparent text-sm text-slate-700 focus:outline-none"
+            >
+              <option value="ALL">All 3 days</option>
+              {scheduleDays.map(([date, label]) => (
+                <option key={date} value={date}>{label}</option>
+              ))}
+            </select>
+          </label>
+          {visibleEvents.length === 0 ? (
+            <p className="py-10 text-center text-sm text-slate-500">No events match this day.</p>
+          ) : (
           <ol className="space-y-0">
-            {sortedEvents.map((event, index) => {
+            {visibleEvents.map((event, index) => {
               const isActive = event.status === 'ACTIVE';
               const status = STATUSES.find((item) => item.key === event.status) ?? STATUSES[0];
               const isPending = pendingEventIds.has(event.event_id);
@@ -312,15 +353,15 @@ function LiveScheduleTimeline({
                   className="relative grid grid-cols-[3.75rem_1.5rem_minmax(0,1fr)] gap-2.5 pb-7 last:pb-0 sm:grid-cols-[5rem_2rem_minmax(0,1fr)] sm:gap-4 sm:pb-8"
                   initial={{ opacity: 0, y: 8 }}
                   animate={{ opacity: 1, y: 0 }}
-                  transition={{ duration: 0.2, delay: index * 0.035 }}
+                  transition={{ duration: 0.2, delay: Math.min(index * 0.005, 0.15) }}
                 >
-                  {index < sortedEvents.length - 1 && (
+                  {index < visibleEvents.length - 1 && (
                     <span
                       className="absolute bottom-0 left-[4.5rem] top-8 w-0.5 bg-gradient-to-b from-[#D4AF37]/60 via-slate-700 to-slate-800 sm:left-[6rem]"
                       aria-hidden="true"
                     />
                   )}
-                  <time className="pt-1 text-sm font-bold tabular-nums text-[#D4AF37] sm:text-base">
+                  <time dateTime={`${event.event_date}T${event.event_time}:00`} className="pt-1 text-sm font-bold tabular-nums text-[#D4AF37] sm:text-base">
                     {event.event_time}
                   </time>
                   <span className={`relative z-10 mt-0.5 flex h-6 w-6 items-center justify-center rounded-full border bg-white ring-4 ring-white ${isActive ? 'border-emerald-500' : event.status === 'COMPLETED' ? 'border-blue-500' : event.status === 'DELAYED' ? 'border-[#EF4444]' : 'border-slate-700'}`}>
@@ -346,6 +387,9 @@ function LiveScheduleTimeline({
                   }`}>
                     <div className="flex flex-wrap items-start justify-between gap-3 border-b border-slate-700 pb-3">
                       <div className="min-w-0">
+                        <p className="mb-1 text-[10px] font-semibold uppercase tracking-wide text-[#8C827A]">
+                          {event.day ?? new Date(`${event.event_date}T00:00:00`).toLocaleDateString('en-IN', { weekday: 'long', day: 'numeric', month: 'short' })}
+                        </p>
                         <h2 className="font-semibold leading-snug text-slate-900">{event.title}</h2>
                         <div className="mt-2 flex flex-col gap-1.5 text-sm text-slate-600 sm:flex-row sm:flex-wrap sm:gap-x-5">
                           <span className="inline-flex items-center gap-1.5">
@@ -395,6 +439,8 @@ function LiveScheduleTimeline({
               );
             })}
           </ol>
+          )}
+          </>
         )}
       </div>
 

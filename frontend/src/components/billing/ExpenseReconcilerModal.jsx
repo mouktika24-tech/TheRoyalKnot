@@ -1,14 +1,17 @@
 import { useEffect, useMemo, useState } from 'react';
-import { AnimatePresence, motion } from 'framer-motion';
+import { motion } from 'framer-motion';
 import {
   AlertCircle,
   CheckCircle2,
   FileCheck2,
   Plus,
   Receipt,
+  Search,
   Trash2,
 } from 'lucide-react';
 import { formatCurrency } from '../../utils/currency';
+import { opsApi } from '../../services/opsApi.js';
+import { mockExpenses } from '../../mock/scaleData.js';
 
 const ORIGINAL_QUOTE = '4200000.00';
 
@@ -50,6 +53,7 @@ const INITIAL_EXTRAS = [
     logged_at: '19:30',
   },
 ];
+const EXPENSE_SEED = mockExpenses.length >= INITIAL_EXTRAS.length ? mockExpenses : INITIAL_EXTRAS;
 
 const VENDOR_OPTIONS = [
   { id: 1, name: 'Royal Rajputana Caterers', category: 'CATERER', label: 'Catering' },
@@ -146,10 +150,11 @@ function ExpenseReconcilerModal({
   onFinalize,
 }) {
   const [expenses, setExpenses] = useState(() => (
-    (Array.isArray(suppliedExpenses) ? suppliedExpenses : INITIAL_EXTRAS)
+    (Array.isArray(suppliedExpenses) ? suppliedExpenses : EXPENSE_SEED)
       .map(normalizeExpense)
       .filter(Boolean)
   ));
+  const [isLoadingExpenses, setIsLoadingExpenses] = useState(false);
   const [selectedVendorId, setSelectedVendorId] = useState(String(VENDOR_OPTIONS[0].id));
   const [description, setDescription] = useState('');
   const [units, setUnits] = useState('1');
@@ -161,11 +166,33 @@ function ExpenseReconcilerModal({
   const [actionError, setActionError] = useState('');
   const [formError, setFormError] = useState('');
   const [successMessage, setSuccessMessage] = useState('');
+  const [expenseQuery, setExpenseQuery] = useState('');
+  const [expenseCategory, setExpenseCategory] = useState('ALL');
 
   useEffect(() => {
     if (Array.isArray(suppliedExpenses)) {
       setExpenses(suppliedExpenses.map(normalizeExpense).filter(Boolean));
+      setIsLoadingExpenses(false);
+      return undefined;
     }
+
+    let isMounted = true;
+    opsApi.getExpenses(1, EXPENSE_SEED)
+      .then((data) => {
+        if (isMounted && Array.isArray(data)) {
+          setExpenses(data.map(normalizeExpense).filter(Boolean));
+        }
+      })
+      .catch((loadError) => {
+        if (isMounted) setActionError(getErrorMessage(loadError, 'Could not load expense ledger.'));
+      })
+      .finally(() => {
+        if (isMounted) setIsLoadingExpenses(false);
+      });
+
+    return () => {
+      isMounted = false;
+    };
   }, [suppliedExpenses]);
 
   const parsedUnits = /^\d+$/.test(units) ? Number(units) : 0;
@@ -203,6 +230,19 @@ function ExpenseReconcilerModal({
           ? 'The reconciliation data could not be loaded.'
           : ''
   );
+  const expenseCategories = useMemo(
+    () => [...new Set(expenses.map((expense) => expense.category))].sort(),
+    [expenses],
+  );
+  const filteredExpenses = useMemo(() => {
+    const query = expenseQuery.trim().toLocaleLowerCase();
+    return expenses.filter((expense) => (
+      (expenseCategory === 'ALL' || expense.category === expenseCategory)
+      && (!query
+        || expense.vendor_name.toLocaleLowerCase().includes(query)
+        || expense.description.toLocaleLowerCase().includes(query))
+    ));
+  }, [expenseCategory, expenseQuery, expenses]);
 
   const addExpense = async (event) => {
     event.preventDefault();
@@ -494,14 +534,41 @@ function ExpenseReconcilerModal({
               <p className="text-xs text-slate-500">All unit rates and totals are maintained to two decimal places.</p>
             </div>
             <span className="w-fit rounded-full border border-slate-200 bg-slate-100 px-2.5 py-1 text-xs font-semibold text-slate-700">
-              {expenses.length} {expenses.length === 1 ? 'entry' : 'entries'}
+              {filteredExpenses.length} of {expenses.length} {expenses.length === 1 ? 'entry' : 'entries'}
             </span>
           </header>
 
-          {loading ? (
+          <div className="mt-4 flex flex-col gap-2 sm:flex-row">
+            <label className="relative min-w-0 flex-1">
+              <span className="sr-only">Search expenses by vendor or description</span>
+              <Search size={15} className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" aria-hidden="true" />
+              <input
+                type="search"
+                value={expenseQuery}
+                onChange={(event) => setExpenseQuery(event.target.value)}
+                placeholder="Search vendor or expense…"
+                className="min-h-10 w-full rounded-lg border border-slate-200 bg-white py-2 pl-9 pr-3 text-xs text-slate-800 focus:border-[#722F37] focus:outline-none focus:ring-1 focus:ring-[#722F37]"
+              />
+            </label>
+            <label>
+              <span className="sr-only">Filter expenses by category</span>
+              <select
+                value={expenseCategory}
+                onChange={(event) => setExpenseCategory(event.target.value)}
+                className="min-h-10 w-full rounded-lg border border-slate-200 bg-white px-3 text-xs text-slate-700 focus:border-[#722F37] focus:outline-none focus:ring-1 focus:ring-[#722F37] sm:w-48"
+              >
+                <option value="ALL">All categories</option>
+                {expenseCategories.map((category) => <option key={category} value={category}>{category.replaceAll('_', ' ')}</option>)}
+              </select>
+            </label>
+          </div>
+
+          {loading || isLoadingExpenses ? (
             <p role="status" className="py-10 text-center text-sm text-slate-500">Loading expense ledger…</p>
           ) : expenses.length === 0 ? (
             <p className="py-10 text-center text-sm text-slate-500">No extra expenses recorded. Add an expense to start the audit ledger.</p>
+          ) : filteredExpenses.length === 0 ? (
+            <p className="py-10 text-center text-sm text-slate-500">No expenses match your search or category.</p>
           ) : (
             <div className="mt-4 overflow-x-auto">
               <table className="w-full min-w-[66rem] text-left text-xs">
@@ -519,13 +586,12 @@ function ExpenseReconcilerModal({
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-100 text-slate-700">
-                  <AnimatePresence initial={false}>
-                    {expenses.map((expense) => (
+                    {filteredExpenses.map((expense) => (
                       <motion.tr
                         key={expense.id}
+                        layout
                         initial={{ opacity: 0, height: 0 }}
                         animate={{ opacity: 1, height: 'auto' }}
-                        exit={{ opacity: 0, height: 0 }}
                         transition={{ duration: 0.18 }}
                         className="transition-colors hover:bg-slate-50/80"
                       >
@@ -538,7 +604,15 @@ function ExpenseReconcilerModal({
                             {expense.category.replaceAll('_', ' ')}
                           </span>
                         </td>
-                        <td className="max-w-64 px-3 py-3 text-slate-600">{expense.description}</td>
+                        <td className="max-w-64 px-3 py-3 text-slate-600">
+                          <span className="block">{expense.description}</span>
+                          {Number.isFinite(expense.estimatedCost) && (
+                            <span className="mt-1 block text-[10px] text-slate-400">
+                              Estimate {formatCurrency(expense.estimatedCost)} · {expense.status?.replaceAll('_', ' ')}
+                              {Number.isFinite(expense.discrepancy) && ` · variance ${formatCurrency(expense.discrepancy)}`}
+                            </span>
+                          )}
+                        </td>
                         <td className="px-3 py-3 text-right font-mono">{expense.extra_units}</td>
                         <td className="whitespace-nowrap px-3 py-3 text-right font-mono">{formatCurrency(expense.unit_rate)}</td>
                         <td className="whitespace-nowrap px-3 py-3 text-right font-mono font-bold text-slate-900">{formatCurrency(expense.total_amount)}</td>
@@ -564,7 +638,6 @@ function ExpenseReconcilerModal({
                         </td>
                       </motion.tr>
                     ))}
-                  </AnimatePresence>
                 </tbody>
               </table>
             </div>

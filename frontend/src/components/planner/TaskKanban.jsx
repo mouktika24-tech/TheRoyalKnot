@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from 'react';
-import { AnimatePresence, motion } from 'framer-motion';
+import { motion } from 'framer-motion';
 import { opsApi } from '../../services/opsApi';
+import { mockTasks } from '../../mock/scaleData.js';
 import {
   ArrowRight,
   CheckCircle2,
@@ -39,6 +40,14 @@ const STAGES = [
     count: 'bg-white text-amber-800',
   },
   {
+    key: 'REVIEW',
+    title: 'In Review',
+    icon: Clock3,
+    dot: 'bg-violet-400',
+    badge: 'border-violet-500/40 bg-violet-500/10 text-violet-300',
+    count: 'bg-violet-500/10 text-violet-300',
+  },
+  {
     key: 'DONE',
     title: 'Done',
     icon: CheckCircle2,
@@ -47,37 +56,12 @@ const STAGES = [
     count: 'bg-emerald-500/10 text-emerald-300',
   },
 ];
-
-const INITIAL_TASKS = [
-  { task_id: 1, title: 'Finalize palace banquet floor plan', category: 'VENUE', owner_name: 'Vikram · Logistics', stage: 'DONE', due_date: 'Day -14' },
-  { task_id: 2, title: 'Confirm palace backup generators and fuel', category: 'VENUE', owner_name: 'Vikram · Logistics', stage: 'IN_PROGRESS', due_date: 'Day -7' },
-  { task_id: 3, title: 'Prepare room allocation and guest key packets', category: 'VENUE', owner_name: 'Pooja · Hospitality', stage: 'TO_PLAN', due_date: 'Day -3' },
-  { task_id: 4, title: 'Secure heritage precinct fire and sound permits', category: 'VENUE', owner_name: 'Vikram · Logistics', stage: 'TO_PLAN', due_date: 'Day -10' },
-  { task_id: 5, title: 'Mandap floral canopy walkthrough', category: 'DESIGN_DECOR', owner_name: 'Aarav · Decor Lead', stage: 'IN_PROGRESS', due_date: 'Day -5' },
-  { task_id: 6, title: 'Approve royal driveway fairy-light tunnel', category: 'DESIGN_DECOR', owner_name: 'Aarav · Decor Lead', stage: 'TO_PLAN', due_date: 'Day -2' },
-  { task_id: 7, title: 'Test courtyard uplighting and truss rig', category: 'DESIGN_DECOR', owner_name: 'Aarav · Decor Lead', stage: 'TO_PLAN', due_date: 'Day -1' },
-  { task_id: 8, title: 'Place vintage Maharaja sofa on reception stage', category: 'DESIGN_DECOR', owner_name: 'Aarav · Decor Lead', stage: 'TO_PLAN', due_date: 'Day of Event' },
-  { task_id: 9, title: 'Sign off caterer tasting and menu spice balance', category: 'VENDORS', owner_name: 'Ananya · Vendor Ops', stage: 'DONE', due_date: 'Day -12' },
-  { task_id: 10, title: 'Sync DJ console audio and lighting cues', category: 'VENDORS', owner_name: 'Ananya · Vendor Ops', stage: 'IN_PROGRESS', due_date: 'Day -1' },
-  { task_id: 11, title: 'Brief dhol team and brass band on arrival', category: 'VENDORS', owner_name: 'Ananya · Vendor Ops', stage: 'TO_PLAN', due_date: 'Day of Event' },
-  { task_id: 12, title: 'Clear cinematography drone flight with palace', category: 'VENDORS', owner_name: 'Vikram · Logistics', stage: 'TO_PLAN', due_date: 'Day -4' },
-  { task_id: 13, title: 'Arrange seating and light kits for henna artists', category: 'MEHENDI', owner_name: 'Pooja · Hospitality', stage: 'DONE', due_date: 'Day -2' },
-  { task_id: 14, title: 'Set up organic floral jewellery distribution table', category: 'MEHENDI', owner_name: 'Pooja · Hospitality', stage: 'IN_PROGRESS', due_date: 'Day -2' },
-  { task_id: 15, title: 'Confirm welcome sharbat and coconut counter', category: 'MEHENDI', owner_name: 'Vikram · Logistics', stage: 'TO_PLAN', due_date: 'Day -2' },
-  { task_id: 16, title: 'Prepare Kalbelia dancers’ green room', category: 'MEHENDI', owner_name: 'Ananya · Vendor Ops', stage: 'TO_PLAN', due_date: 'Day -2' },
-  { task_id: 17, title: 'Rehearse family choreography audio sync', category: 'SANGEET', owner_name: 'Ananya · Vendor Ops', stage: 'IN_PROGRESS', due_date: 'Day -1' },
-  { task_id: 18, title: 'Verify LED backdrop video resolution and cues', category: 'SANGEET', owner_name: 'Aarav · Decor Lead', stage: 'TO_PLAN', due_date: 'Day -1' },
-  { task_id: 19, title: 'Count cocktail bar glassware and ice inventory', category: 'SANGEET', owner_name: 'Vikram · Logistics', stage: 'TO_PLAN', due_date: 'Day -1' },
-  { task_id: 20, title: 'Complete safety check for couple grand-entry sparklers', category: 'SANGEET', owner_name: 'Aarav · Decor Lead', stage: 'TO_PLAN', due_date: 'Day -1' },
-  { task_id: 21, title: 'Clear Baraat vintage car route with palace security', category: 'WEDDING_CEREMONY', owner_name: 'Vikram · Logistics', stage: 'TO_PLAN', due_date: 'Day of Event' },
-  { task_id: 22, title: 'Inspect fresh rose-petal Varmala garlands', category: 'WEDDING_CEREMONY', owner_name: 'Aarav · Decor Lead', stage: 'TO_PLAN', due_date: 'Day of Event' },
-  { task_id: 23, title: 'Prepare sacred havan samagri and priest altar', category: 'WEDDING_CEREMONY', owner_name: 'Pooja · Hospitality', stage: 'TO_PLAN', due_date: 'Day of Event' },
-  { task_id: 24, title: 'Assign shaded Mandap seating for VIP guests', category: 'WEDDING_CEREMONY', owner_name: 'Pooja · Hospitality', stage: 'TO_PLAN', due_date: 'Day of Event' },
-  { task_id: 25, title: 'Sync couple spotlight tracking with entry fanfare', category: 'RECEPTION', owner_name: 'Ananya · Vendor Ops', stage: 'TO_PLAN', due_date: 'Day of Event' },
-  { task_id: 26, title: 'Release eight regional dinner buffet stations', category: 'RECEPTION', owner_name: 'Vikram · Logistics', stage: 'TO_PLAN', due_date: 'Day of Event' },
-  { task_id: 27, title: 'Coordinate Jaipur sweet hamper distribution', category: 'RECEPTION', owner_name: 'Pooja · Hospitality', stage: 'TO_PLAN', due_date: 'Day of Event' },
-  { task_id: 28, title: 'Verify vendor load-out and complete venue handover', category: 'RECEPTION', owner_name: 'Vikram · Logistics', stage: 'TO_PLAN', due_date: 'Day +1' },
-];
+const TASK_STATUS_BY_STAGE = {
+  TO_PLAN: 'todo',
+  IN_PROGRESS: 'in_progress',
+  REVIEW: 'review',
+  DONE: 'completed',
+};
 
 const isValidStage = (stage) => STAGES.some((item) => item.key === stage);
 const isValidCategory = (category) => CATEGORIES.includes(category);
@@ -125,12 +109,13 @@ function TaskKanban({
   onGeneratePlan,
   onTaskStageChange,
 }) {
-  const [taskList, setTaskList] = useState(() => normalizeTasks(suppliedTasks ?? INITIAL_TASKS));
+  const [taskList, setTaskList] = useState(() => normalizeTasks(suppliedTasks ?? mockTasks));
   const [selectedCategory, setSelectedCategory] = useState('ALL');
+  const [selectedPriority, setSelectedPriority] = useState('ALL');
   const [searchQuery, setSearchQuery] = useState('');
   const [pendingTaskIds, setPendingTaskIds] = useState(() => new Set());
   const [isGenerating, setIsGenerating] = useState(false);
-  const [isLoadingTasks, setIsLoadingTasks] = useState(!Array.isArray(suppliedTasks));
+  const [isLoadingTasks, setIsLoadingTasks] = useState(false);
   const [actionError, setActionError] = useState('');
   const externalErrorMessage = typeof externalError === 'string'
     ? externalError
@@ -151,8 +136,7 @@ function TaskKanban({
     }
 
     let isMounted = true;
-    setIsLoadingTasks(true);
-    opsApi.getTasks(1, INITIAL_TASKS)
+    opsApi.getTasks(1, mockTasks)
       .then((data) => {
         if (isMounted && Array.isArray(data) && data.length > 0) {
           const normalizedTasks = normalizeTasks(data);
@@ -179,6 +163,7 @@ function TaskKanban({
 
   const completedCount = taskList.filter((task) => task.stage === 'DONE').length;
   const inProgressCount = taskList.filter((task) => task.stage === 'IN_PROGRESS').length;
+  const reviewCount = taskList.filter((task) => task.stage === 'REVIEW').length;
   const toPlanCount = taskList.filter((task) => task.stage === 'TO_PLAN').length;
   const progressPercent = taskList.length ? Math.round((completedCount / taskList.length) * 100) : 0;
 
@@ -187,13 +172,18 @@ function TaskKanban({
 
     return taskList.filter((task) => {
       const matchesCategory = selectedCategory === 'ALL' || task.category === selectedCategory;
+      const matchesPriority = selectedPriority === 'ALL' || task.priority === selectedPriority;
       const matchesSearch = !query
         || task.title.toLocaleLowerCase().includes(query)
-        || task.owner_name.toLocaleLowerCase().includes(query);
+        || task.owner_name.toLocaleLowerCase().includes(query)
+        || (task.assigned_vendor ?? '').toLocaleLowerCase().includes(query)
+        || (Array.isArray(task.tags) && task.tags.some((tag) => (
+          typeof tag === 'string' && tag.toLocaleLowerCase().includes(query)
+        )));
 
-      return matchesCategory && matchesSearch;
+      return matchesCategory && matchesPriority && matchesSearch;
     });
-  }, [taskList, selectedCategory, searchQuery]);
+  }, [taskList, selectedCategory, selectedPriority, searchQuery]);
 
   const advanceTaskStage = async (task) => {
     const stageIndex = STAGES.findIndex((stage) => stage.key === task.stage);
@@ -203,7 +193,9 @@ function TaskKanban({
     setActionError('');
     setPendingTaskIds((current) => new Set(current).add(task.task_id));
     setTaskList((current) => current.map((item) => (
-      item.task_id === task.task_id ? { ...item, stage: nextStage.key } : item
+      item.task_id === task.task_id
+        ? { ...item, stage: nextStage.key, status: TASK_STATUS_BY_STAGE[nextStage.key] }
+        : item
     )));
 
     try {
@@ -214,7 +206,9 @@ function TaskKanban({
       }
     } catch (stageError) {
       setTaskList((current) => current.map((item) => (
-        item.task_id === task.task_id ? { ...item, stage: task.stage } : item
+        item.task_id === task.task_id
+          ? { ...item, stage: task.stage, status: task.status }
+          : item
       )));
       setActionError(getErrorMessage(stageError, 'Could not update this task. Its previous stage has been restored.'));
     } finally {
@@ -234,8 +228,8 @@ function TaskKanban({
     setActionError('');
 
     try {
-      const result = await onGeneratePlan?.(INITIAL_TASKS.map((task) => ({ ...task })));
-      setTaskList(Array.isArray(result) ? normalizeTasks(result) : INITIAL_TASKS.map((task) => ({ ...task })));
+      const result = await onGeneratePlan?.(mockTasks.map((task) => ({ ...task })));
+      setTaskList(Array.isArray(result) ? normalizeTasks(result) : mockTasks.map((task) => ({ ...task })));
     } catch (generationError) {
       setTaskList(previousTasks);
       setActionError(getErrorMessage(generationError, 'Could not generate the plan. Your existing tasks have been preserved.'));
@@ -250,7 +244,7 @@ function TaskKanban({
         <div>
           <p className="mb-1 block text-xs font-medium uppercase tracking-[0.2em] text-[#8C827A]">THE ROYAL KNOT WORKSPACE</p>
           <h1 id="task-kanban-title" className="mt-1 font-serif text-3xl font-bold tracking-tight text-[#2A211D]">The Instant Wedding Plan</h1>
-          <p className="mt-1 text-sm text-[#7A7067]">A live view of the 28 operational tasks for your celebration.</p>
+          <p className="mt-1 text-sm text-[#7A7067]">A live view of 180 operational tasks for your celebration.</p>
         </div>
         <button
           type="button"
@@ -259,7 +253,7 @@ function TaskKanban({
           className="inline-flex min-h-10 shrink-0 items-center justify-center gap-2 rounded-lg bg-[#722F37] px-4 py-2 text-xs font-medium text-white shadow-sm transition-colors hover:bg-[#5B1F27] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#D4AF37] disabled:cursor-not-allowed disabled:opacity-60"
         >
           <Sparkles size={17} className="text-[#F3E5AB]" aria-hidden="true" />
-          {isGenerating ? 'Generating plan…' : 'Generate 28-Task Plan'}
+          {isGenerating ? 'Generating plan…' : 'Generate 180-Task Plan'}
         </button>
       </header>
 
@@ -270,7 +264,7 @@ function TaskKanban({
       )}
 
       <section aria-label="Plan progress" className="rounded-xl border border-[#ECE7E1]/80 bg-white/85 p-5 shadow-sm backdrop-blur-md transition-all duration-200 hover:[translate:0_-2px] hover:shadow-md">
-        <div className="grid grid-cols-2 gap-4 sm:grid-cols-4">
+        <div className="grid grid-cols-2 gap-4 sm:grid-cols-5">
           <div>
             <p className="text-xs font-medium text-slate-600">Total tasks</p>
             <p className="mt-1 text-2xl font-semibold text-[#D4AF37]">{taskList.length}</p>
@@ -282,6 +276,10 @@ function TaskKanban({
           <div>
             <p className="text-xs font-medium text-amber-800">In progress</p>
             <p className="mt-1 text-2xl font-semibold text-amber-800">{inProgressCount}</p>
+          </div>
+          <div>
+            <p className="text-xs font-medium text-violet-800">In review</p>
+            <p className="mt-1 text-2xl font-semibold text-violet-800">{reviewCount}</p>
           </div>
           <div>
             <p className="text-xs font-medium text-emerald-700">Completed</p>
@@ -337,11 +335,24 @@ function TaskKanban({
             ))}
           </select>
         </label>
+        <label className="flex min-h-11 items-center gap-2 rounded-xl border border-slate-700 bg-white px-3 focus-within:border-[#D4AF37] focus-within:ring-2 focus-within:ring-[#D4AF37]/25 sm:w-48">
+          <span className="sr-only">Filter tasks by priority</span>
+          <select
+            value={selectedPriority}
+            onChange={(event) => setSelectedPriority(event.target.value)}
+            className="min-h-10 w-full bg-transparent text-sm text-slate-900 focus:outline-none"
+          >
+            <option value="ALL">All priorities</option>
+            <option value="high">High priority</option>
+            <option value="medium">Medium priority</option>
+            <option value="low">Low priority</option>
+          </select>
+        </label>
       </div>
 
       {(loading || isLoadingTasks) && <p role="status" className="text-sm text-slate-400">Loading wedding tasks…</p>}
 
-      <div className="grid items-start gap-4 md:grid-cols-3">
+      <div className="grid items-start gap-4 md:grid-cols-2 xl:grid-cols-4">
         {STAGES.map(({ key, title, icon: Icon, dot, badge, count }) => {
           const columnTasks = filteredTasks.filter((task) => task.stage === key);
           const taskCount = taskList.filter((task) => task.stage === key).length;
@@ -365,8 +376,7 @@ function TaskKanban({
               </header>
 
               <div className="flex flex-1 flex-col gap-3">
-                <AnimatePresence initial={false}>
-                  {columnTasks.map((task) => {
+                {columnTasks.map((task) => {
                     const stageIndex = STAGES.findIndex((stage) => stage.key === task.stage);
                     const nextStage = STAGES[stageIndex + 1];
                     const isPending = pendingTaskIds.has(task.task_id);
@@ -379,7 +389,6 @@ function TaskKanban({
                         layoutId={task.task_id}
                         initial={{ opacity: 0, scale: 0.97 }}
                         animate={{ opacity: 1, scale: 1 }}
-                        exit={{ opacity: 0, scale: 0.97 }}
                         transition={{ duration: 0.2 }}
                         className="rounded-xl border border-[#ECE7E1]/80 bg-white/85 p-3.5 shadow-sm backdrop-blur-md transition-all duration-200 hover:[translate:0_-2px] hover:border-[#D4AF37]/70 hover:shadow-md"
                       >
@@ -392,6 +401,25 @@ function TaskKanban({
                           </span>
                         </div>
                         <h3 className="text-sm font-semibold leading-snug text-slate-900">{task.title}</h3>
+                        <div className="mt-2 flex flex-wrap items-center gap-1.5">
+                          <span className={`rounded-full border px-2 py-0.5 text-[10px] font-semibold uppercase ${
+                            task.priority === 'high'
+                              ? 'border-rose-200 bg-rose-50 text-rose-700'
+                              : task.priority === 'low'
+                                ? 'border-slate-200 bg-slate-50 text-slate-600'
+                                : 'border-amber-200 bg-amber-50 text-amber-800'
+                          }`}>
+                            {task.priority ?? 'medium'} priority
+                          </span>
+                          {(task.tags ?? []).slice(0, 3).map((tag) => (
+                            <span key={tag} className="rounded-full bg-slate-100 px-2 py-0.5 text-[10px] text-slate-600">
+                              {tag}
+                            </span>
+                          ))}
+                        </div>
+                        <p className="mt-2 truncate text-[11px] text-slate-500" title={task.assigned_vendor}>
+                          Vendor: {task.assigned_vendor ?? 'To be assigned'}
+                        </p>
                         <div className="mt-3 flex items-center justify-between gap-2 border-t border-slate-700 pt-3">
                           <div className="flex min-w-0 items-center gap-2">
                             <span
@@ -423,8 +451,7 @@ function TaskKanban({
                         </div>
                       </motion.div>
                     );
-                  })}
-                </AnimatePresence>
+                })}
 
                 {columnTasks.length === 0 && (
                   <div className="flex min-h-28 flex-col items-center justify-center rounded-xl border border-dashed border-slate-700 px-3 text-center text-sm text-slate-600">

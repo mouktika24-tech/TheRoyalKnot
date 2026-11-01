@@ -1,5 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
+import { opsApi } from '../../services/opsApi.js';
+import { mockVendors } from '../../mock/scaleData.js';
 import {
   AlertTriangle,
   Building2,
@@ -102,6 +104,7 @@ const INITIAL_VENDORS = [
     notes_remarks: 'Scheduled to install cold sparklers around the stage.',
   },
 ];
+const CHECKIN_SEED = mockVendors.length >= INITIAL_VENDORS.length ? mockVendors : INITIAL_VENDORS;
 
 const CATEGORIES = [
   'CATERER',
@@ -179,10 +182,11 @@ function VendorCheckinBoard({
   onCheckinChange,
 }) {
   const [vendors, setVendors] = useState(() => (
-    (Array.isArray(suppliedVendors) ? suppliedVendors : INITIAL_VENDORS)
+    (Array.isArray(suppliedVendors) ? suppliedVendors : CHECKIN_SEED)
       .map(normalizeVendor)
       .filter(Boolean)
   ));
+  const [isLoadingVendors, setIsLoadingVendors] = useState(false);
   const [selectedCategory, setSelectedCategory] = useState('ALL');
   const [searchQuery, setSearchQuery] = useState('');
   const [activeVendor, setActiveVendor] = useState(null);
@@ -198,7 +202,27 @@ function VendorCheckinBoard({
   useEffect(() => {
     if (Array.isArray(suppliedVendors)) {
       setVendors(suppliedVendors.map(normalizeVendor).filter(Boolean));
+      setIsLoadingVendors(false);
+      return undefined;
     }
+
+    let isMounted = true;
+    opsApi.getCheckins(1, CHECKIN_SEED)
+      .then((data) => {
+        if (isMounted && Array.isArray(data)) {
+          setVendors(data.map(normalizeVendor).filter(Boolean));
+        }
+      })
+      .catch((loadError) => {
+        if (isMounted) setActionError(getErrorMessage(loadError, 'Could not load vendor check-ins.'));
+      })
+      .finally(() => {
+        if (isMounted) setIsLoadingVendors(false);
+      });
+
+    return () => {
+      isMounted = false;
+    };
   }, [suppliedVendors]);
 
   useEffect(() => {
@@ -396,9 +420,12 @@ function VendorCheckinBoard({
             {CATEGORIES.map((category) => <option key={category} value={category}>{category.replaceAll('_', ' ')}</option>)}
           </select>
         </label>
+        <p className="text-xs text-slate-500" aria-live="polite">
+          Showing {filteredVendors.length} of {totalVendors} vendors
+        </p>
       </div>
 
-      {loading ? (
+      {loading || isLoadingVendors ? (
         <p role="status" className="rounded-xl border border-slate-200 bg-white px-4 py-10 text-center text-sm text-slate-500">
           Loading vendor check-ins…
         </p>
@@ -408,8 +435,7 @@ function VendorCheckinBoard({
         </p>
       ) : (
         <ul className="grid gap-5 md:grid-cols-2 lg:grid-cols-3">
-          <AnimatePresence initial={false}>
-            {filteredVendors.map((vendor, index) => {
+            {filteredVendors.map((vendor) => {
               const isDelayed = vendor.status === 'DELAYED';
               const isArrived = vendor.status === 'ARRIVED';
               const isSaving = pendingIds.has(vendor.checkin_id);
@@ -420,8 +446,7 @@ function VendorCheckinBoard({
                   layout
                   initial={{ opacity: 0, scale: 0.98 }}
                   animate={{ opacity: 1, scale: 1 }}
-                  exit={{ opacity: 0, scale: 0.98 }}
-                  transition={{ duration: 0.2, delay: index * 0.025 }}
+                  transition={{ duration: 0.2 }}
                 >
                   <article className={`flex h-full flex-col justify-between rounded-xl border bg-white p-5 shadow-sm transition-all duration-200 hover:shadow-md ${
                     isDelayed
@@ -491,7 +516,6 @@ function VendorCheckinBoard({
                 </motion.li>
               );
             })}
-          </AnimatePresence>
         </ul>
       )}
 

@@ -1,8 +1,20 @@
 import axios from 'axios';
+import {
+  mockExpenses,
+  mockScheduleEvents,
+  mockTasks,
+  mockVendors,
+} from '../mock/scaleData.js';
 
 const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000/api';
 const TIME_PATTERN = /^([01]\d|2[0-3]):([0-5]\d)$/;
-const TASK_STAGES = ['TO_PLAN', 'IN_PROGRESS', 'DONE'];
+const TASK_STAGES = ['TO_PLAN', 'IN_PROGRESS', 'REVIEW', 'DONE'];
+const TASK_STATUS_BY_STAGE = {
+  TO_PLAN: 'todo',
+  IN_PROGRESS: 'in_progress',
+  REVIEW: 'review',
+  DONE: 'completed',
+};
 const CHECKIN_STATUSES = ['ARRIVED', 'DELAYED'];
 
 const client = axios.create({
@@ -39,6 +51,31 @@ function cacheSet(key, value) {
   }
 }
 
+function mergeCachedRecords(seedRecords, cachedRecords) {
+  if (!Array.isArray(seedRecords) || !Array.isArray(cachedRecords)) return cachedRecords;
+
+  const recordId = (record) => record?.task_id ?? record?.event_id ?? record?.checkin_id
+    ?? record?.expense_id ?? record?.id;
+  const cachedById = new Map(
+    cachedRecords
+      .filter((record) => record && recordId(record) !== undefined)
+      .map((record) => [String(recordId(record)), record]),
+  );
+  const seedIds = new Set();
+  const mergedSeeds = seedRecords.map((record) => {
+    const id = recordId(record);
+    if (id === undefined) return record;
+    seedIds.add(String(id));
+    return { ...record, ...(cachedById.get(String(id)) ?? {}) };
+  });
+  const newCachedRecords = cachedRecords.filter((record) => {
+    const id = recordId(record);
+    return id === undefined || !seedIds.has(String(id));
+  });
+
+  return [...mergedSeeds, ...newCachedRecords];
+}
+
 function updateCachedRecord(key, id, updates, idFields) {
   const cached = cacheGet(key);
   if (!Array.isArray(cached)) return;
@@ -63,7 +100,7 @@ async function withOfflineFallback(key, apiCall, fallbackData) {
   } catch (error) {
     console.warn(`[Offline Cache Fallback] ${key}: Using cached or default data due to:`, getErrorMessage(error));
     const cached = cacheGet(key);
-    return cached === null ? fallbackData : cached;
+    return cached === null ? fallbackData : mergeCachedRecords(fallbackData, cached);
   }
 }
 
@@ -123,7 +160,7 @@ function normalizeExpensePayload(expense) {
 }
 
 export const opsApi = {
-  async getTasks(weddingId = 1, defaultTasks = []) {
+  async getTasks(weddingId = 1, defaultTasks = mockTasks) {
     return withOfflineFallback(`tasks_${weddingId}`, () => client.get(`/tasks/${encodeURIComponent(weddingId)}`), defaultTasks);
   },
 
@@ -133,16 +170,16 @@ export const opsApi = {
 
     try {
       const response = await client.patch(`/tasks/${encodeURIComponent(taskId)}/stage`, { stage });
-      updateCachedRecord(cacheKey, taskId, { stage }, ['task_id', 'id']);
+      updateCachedRecord(cacheKey, taskId, { stage, status: TASK_STATUS_BY_STAGE[stage] }, ['task_id', 'id']);
       return response.data;
     } catch (error) {
       console.warn('[Offline Mode] Saved task stage update locally:', { taskId, stage, error: getErrorMessage(error) });
-      updateCachedRecord(cacheKey, taskId, { stage }, ['task_id', 'id']);
+      updateCachedRecord(cacheKey, taskId, { stage, status: TASK_STATUS_BY_STAGE[stage] }, ['task_id', 'id']);
       return { success: true, offline: true, taskId, stage };
     }
   },
 
-  async getSchedule(weddingId = 1, defaultSchedule = []) {
+  async getSchedule(weddingId = 1, defaultSchedule = mockScheduleEvents) {
     return withOfflineFallback(`schedule_${weddingId}`, () => client.get(`/schedule/${encodeURIComponent(weddingId)}`), defaultSchedule);
   },
 
@@ -181,7 +218,7 @@ export const opsApi = {
     }
   },
 
-  async getCheckins(weddingId = 1, defaultVendors = []) {
+  async getCheckins(weddingId = 1, defaultVendors = mockVendors) {
     return withOfflineFallback(`checkins_${weddingId}`, () => client.get(`/checkins/${encodeURIComponent(weddingId)}`), defaultVendors);
   },
 
@@ -210,7 +247,7 @@ export const opsApi = {
     }
   },
 
-  async getExpenses(weddingId = 1, defaultExpenses = []) {
+  async getExpenses(weddingId = 1, defaultExpenses = mockExpenses) {
     return withOfflineFallback(`expenses_${weddingId}`, () => client.get(`/expenses/${encodeURIComponent(weddingId)}`), defaultExpenses);
   },
 
