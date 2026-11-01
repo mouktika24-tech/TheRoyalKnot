@@ -139,6 +139,7 @@ function App() {
             />
             <Route path="planner" element={<TaskKanban />} />
             <Route path="schedule" element={<ScheduleWorkspace />} />
+            <Route path="vendor-checkin" element={<VendorCheckinBoard />} />
             <Route path="billing" element={<BillingWorkspace />} />
             <Route path="dashboard" element={<FounderSeasonDashboard />} />
             <Route path="*" element={<Navigate to="/enquiries" replace />} />

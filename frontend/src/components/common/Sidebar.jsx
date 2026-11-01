@@ -5,7 +5,6 @@ import {
   CalendarDays,
   ClipboardList,
   FileCheck2,
-  GitCompare,
   Menu,
   Receipt,
   UsersRound,
@@ -24,9 +23,9 @@ const navigationItems = [
     icon: FileCheck2,
   },
   {
-    label: 'Vendor Quote Matrix',
-    to: '/quotes',
-    icon: GitCompare,
+    label: 'Vendor Check-in',
+    to: '/vendor-checkin',
+    icon: CalendarDays,
   },
   {
     label: 'Instant Wedding Plan',
